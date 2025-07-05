@@ -105,6 +105,26 @@ def round_nutrition_value(value: float, nutrient_type: str = "other", precision:
             # Round to the specified precision for small values
             return round(value * 10**precision) / 10**precision
 
+def round_rdi_percent(value: float) -> float:
+    """Round %RDI for vitamins and minerals according to custom rules.
+    - Between 5 and 50 -> nearest multiple of 5
+    - Above 50 -> nearest multiple of 10
+    Other values stay the same (rounded to 1 decimal place)
+    """
+    if value is None:
+        return None
+    try:
+        value = float(value)
+    except (TypeError, ValueError):
+        return value
+
+    if 5 <= value <= 50:
+        return round(value / 5) * 5
+    elif value > 50:
+        return round(value / 10) * 10
+    else:
+        return round(value, 1)
+
 def format_nutrition_display(value: Optional[float], nutrient_type: str = "other", unit: str = "g") -> str:
     """
     Format nutrition value for display according to Thai FDA regulations.

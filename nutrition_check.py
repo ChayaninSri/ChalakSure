@@ -8,7 +8,7 @@ from typing import Dict, List, Any
 import io # Added for BytesIO for file download
 from nutrition_report import generate_nutrition_report # Added for report generation
 from disclaim_check import check_disclaimers
-from nutrition_cal import adjust_per_100_to_serving, round_nutrition_value, calculate_per_100kcal, prepare_rounded_values_display
+from nutrition_cal import adjust_per_100_to_serving, round_nutrition_value, calculate_per_100kcal, prepare_rounded_values_display, round_rdi_percent
 
 # Helper function for loading CSV files
 def load_csv_file(filename, error_message):
@@ -268,21 +268,23 @@ def evaluate_special_rule(special_rule, values_dict, label_values=None):
                 operator = match.group(2)
                 value = float(match.group(3))
                 
-                # ตรวจสอบค่าจาก values_dict ก่อน
-                nutrient_value = values_dict.get(nutrient)
-                if nutrient_value is not None:
-                    if eval(f"{nutrient_value} {operator} {value}"):
-                        continue
-                
-                # ถ้าไม่ผ่านและมี label_values ให้ตรวจสอบจาก label_values
+                # ตรวจสอบเงื่อนไขสำหรับหน่วยบริโภคอ้างอิง (values_dict) และหน่วยบริโภคบนฉลาก (label_values)
+                # เงื่อนไขต้องเป็นจริงสำหรับทั้งสองกรณี (AND logic)
+
+                # --- ตรวจสอบหน่วยบริโภคอ้างอิง ---
+                ref_value = values_dict.get(nutrient)
+                # ถ้าไม่มีค่า หรือค่าไม่ผ่านเงื่อนไข ให้ถือว่าไม่ผ่านทันที
+                if ref_value is None or not eval(f"{ref_value} {operator} {value}"):
+                    return False
+
+                # --- ตรวจสอบหน่วยบริโภคบนฉลาก (ถ้ามี) ---
                 if label_values is not None:
                     label_value = label_values.get(nutrient)
-                    if label_value is not None:
-                        if eval(f"{label_value} {operator} {value}"):
-                            continue
+                    # ถ้าไม่มีค่า หรือค่าไม่ผ่านเงื่อนไข ให้ถือว่าไม่ผ่านทันที
+                    if label_value is None or not eval(f"{label_value} {operator} {value}"):
+                        return False
                 
-                # ถ้าไม่ผ่านเงื่อนไขใดเงื่อนไขหนึ่ง (OR)
-                return False
+                # หากผ่านการตรวจสอบทั้งหมดสำหรับ rule นี้ ให้วนลูปเพื่อตรวจสอบ rule ถัดไป
                 
         return True
     except Exception as e:
@@ -836,7 +838,7 @@ def show():
             # Process label_values first (per serving values)
             for nutrient_key in list(label_values.keys()): # Iterate over copy of keys
                 if nutrient_values.get(nutrient_key + "_is_direct_rdi"): # Check original nutrient_values for the flag
-                    # User inputted %RDI directly for this nutrient
+                    # User inputted %RDI directly. 'value' from nutrient_values.items() is this direct %RDI.
                     direct_rdi_percentage = label_values[nutrient_key] # This is the %RDI value
                     label_values[nutrient_key + "_rdi_percent"] = direct_rdi_percentage
                     
@@ -856,7 +858,10 @@ def show():
                     if thai_rdi_abs is not None and thai_rdi_abs > 0:
                         current_adj_val = adjusted_values.get(nutrient_key)
                         if isinstance(current_adj_val, (int, float)):
-                            adjusted_values[nutrient_key + "_rdi_percent"] = (float(current_adj_val) / thai_rdi_abs) * 100
+                            computed_rdi = (float(current_adj_val) / thai_rdi_abs) * 100
+                            if is_vitamin_or_mineral(nutrient_key):
+                                computed_rdi = round_rdi_percent(computed_rdi)
+                            adjusted_values[nutrient_key + "_rdi_percent"] = computed_rdi
                         else:
                             adjusted_values[nutrient_key + "_rdi_percent"] = 0 # Default to 0 if value is not numeric
                             
@@ -876,7 +881,10 @@ def show():
                     if thai_rdi_abs is not None and thai_rdi_abs > 0:
                         current_adj_val = adjusted_values.get(nutrient_key)
                         if isinstance(current_adj_val, (int, float)):
-                            adjusted_values[nutrient_key + "_rdi_percent"] = (float(current_adj_val) / thai_rdi_abs) * 100
+                            computed_rdi = (float(current_adj_val) / thai_rdi_abs) * 100
+                            if is_vitamin_or_mineral(nutrient_key):
+                                computed_rdi = round_rdi_percent(computed_rdi)
+                            adjusted_values[nutrient_key + "_rdi_percent"] = computed_rdi
                         else:
                             adjusted_values[nutrient_key + "_rdi_percent"] = 0
                             
@@ -939,11 +947,15 @@ def show():
 
                         if absolute_amount_on_label is not None and rdi_value is not None and rdi_value > 0:
                             label_percent_rdi = (absolute_amount_on_label / rdi_value) * 100
+                            if is_vitamin_or_mineral(nutrient_key):
+                                label_percent_rdi = round_rdi_percent(label_percent_rdi)
                     
                     # คำนวณ %RDI จากหน่วยบริโภคอ้างอิง (Uses adjusted_values)
                     ref_percent_rdi = None 
                     if adjusted_values and nutrient_key in adjusted_values and adjusted_values[nutrient_key] is not None and rdi_value is not None and rdi_value > 0:
-                         ref_percent_rdi = (adjusted_values[nutrient_key] / rdi_value) * 100
+                            ref_percent_rdi = (adjusted_values[nutrient_key] / rdi_value) * 100
+                            if is_vitamin_or_mineral(nutrient_key):
+                                ref_percent_rdi = round_rdi_percent(ref_percent_rdi)
                     
                     thai_name = RDI_MAPPING.get(nutrient_key)
                     nutrient_display = thai_name if thai_name else nutrient_key
@@ -1036,7 +1048,7 @@ def show():
                 if "สูง" in claim_text or "high" in claim_text.lower() or "rich" in claim_text.lower():
                     # st.info(f"DEBUG - Evaluating High Fiber Claim: claim_text={claim_text}, threshold={threshold_str}, value={adjusted_values.get('fiber')}")
                     pass
-                elif "แหล่งของ" in claim_text or "source" in claim_text.lower():
+                elif "แหล่งของ" in claim_text or ("source" in claim_text.lower() and "excellent source" not in claim_text.lower()):
                     # st.info(f"DEBUG - Evaluating Source Fiber Claim: claim_text={claim_text}, threshold={threshold_str}, value={adjusted_values.get('fiber')}")
                     pass
 
@@ -1771,7 +1783,7 @@ def show():
                 "actual_serving_size": actual_serving_size,
                 "has_added_sugar": has_added_sugar if table_type == "table1" else None,
                 "nutrient_inputs": nutrient_values, # Original user inputs
-                "RDI_MAPPING_ витамин": RDI_MAPPING, # Pass the mapping
+                "RDI_MAPPING_ วิตามิน": RDI_MAPPING, # Pass the mapping
                 "VITAMIN_MINERAL_UNITS": { # Pass units for the report
                     **{info['key']: info['unit'] for group in VITAMIN_MINERAL_GROUPS.values() for info in group.values()},
                     "energy": "kcal", "protein": "g", "fat": "g", "saturated_fat": "g",
@@ -1870,7 +1882,7 @@ def is_vitamin_or_mineral(nutrient_key):
     thai_vitamins = [
         "วิตามินเอ", "วิตามินดี", "วิตามินอี", "วิตามินเค", "วิตามินซี",
         "วิตามินบี1", "วิตามินบี2", "วิตามินบี6", "วิตามินบี12", "ไทอามีน", "ไรโบฟลาวิน",
-        "ไบโอติน", "โฟเลต", "ไนอะซิน", "กรดแพนโทเธนิก", "โฟลิก", "กรดแพนโททีนิก",
+        "ไบโอติน", "โฟเลต", "ไนอะซิน", "กรดแพนโททีนิก", "โฟลิก", "กรดแพนโททีนิก",
         "แคลเซียม", "เหล็ก", "ฟอสฟอรัส", "แมกนีเซียม", "สังกะสี",
         "ไอโอดีน", "ทองแดง", "ซีลีเนียม", "แมงกานีส", "โมลิบดีนัม", 
         "โครเมียม", "โพแทสเซียม", "คลอไรด์"
@@ -2062,6 +2074,8 @@ def check_vitamin_mineral_claims(nutrient_values, adjusted_values, claims_table,
                     continue
                     
                 percent_rdi = (adjusted_value / rdi_value) * 100
+                if is_vitamin_or_mineral(vitamin_key):
+                    percent_rdi = round_rdi_percent(percent_rdi)
                 percent_rdi_per_100kcal = adjusted_values.get(f"{vitamin_key}_rdi_percent_per_100kcal", 0)
                 
                 # คำนวณ %RDI จากค่าในฉลาก (label_values) - สำหรับกรณีอยู่ในบัญชีหมายเลข 2
@@ -2070,6 +2084,8 @@ def check_vitamin_mineral_claims(nutrient_values, adjusted_values, claims_table,
                     label_value = label_values.get(vitamin_key, 0)
                     if label_value is not None:
                         label_percent_rdi = (label_value / rdi_value) * 100
+                        if is_vitamin_or_mineral(vitamin_key):
+                            label_percent_rdi = round_rdi_percent(label_percent_rdi)
                 
                 matching_claims = []
                 for _, row in claims_table.iterrows():
@@ -2206,76 +2222,7 @@ def check_vitamin_mineral_claims(nutrient_values, adjusted_values, claims_table,
         st.error(f"เกิดข้อผิดพลาดในการตรวจสอบคำกล่าวอ้างวิตามินและแร่ธาตุ: {e}")
         return []
 
-# เพิ่มฟังก์ชันช่วยสำหรับหน่วยของวิตามินและแร่ธาตุ
-def get_nutrient_unit(nutrient_key):
-    """คืนค่าหน่วยของวิตามินหรือแร่ธาตุ"""
-    if not nutrient_key:
-        return ""
-        
-    nutrient_key = nutrient_key.lower()
-    
-    # วิตามิน
-    if "วิตามินเอ" in nutrient_key or "vitamin_a" in nutrient_key or "vitamin a" in nutrient_key:
-        return "μg RAE"
-    if "วิตามินดี" in nutrient_key or "vitamin_d" in nutrient_key or "vitamin d" in nutrient_key:
-        return "μg"
-    if "วิตามินอี" in nutrient_key or "vitamin_e" in nutrient_key or "vitamin e" in nutrient_key:
-        return "mg α-TE"
-    if "วิตามินเค" in nutrient_key or "vitamin_k" in nutrient_key or "vitamin k" in nutrient_key:
-        return "μg"
-    if "วิตามินซี" in nutrient_key or "vitamin_c" in nutrient_key or "vitamin c" in nutrient_key:
-        return "mg"
-    if "วิตามินบี1" in nutrient_key or "vitamin_b1" in nutrient_key or "vitamin b1" in nutrient_key or "ไทอามีน" in nutrient_key or "thiamine" in nutrient_key:
-        return "mg"
-    if "วิตามินบี2" in nutrient_key or "vitamin_b2" in nutrient_key or "vitamin b2" in nutrient_key or "ไรโบฟลาวิน" in nutrient_key or "riboflavin" in nutrient_key:
-        return "mg"
-    if "ไนอะซิน" in nutrient_key or "niacin" in nutrient_key:
-        return "mg NE"
-    if "กรดแพนโทเธนิก" in nutrient_key or "pantothenic" in nutrient_key:
-        return "mg"
-    if "วิตามินบี6" in nutrient_key or "vitamin_b6" in nutrient_key or "vitamin b6" in nutrient_key:
-        return "mg"
-    if "ไบโอติน" in nutrient_key or "biotin" in nutrient_key:
-        return "μg"
-    if "โฟเลต" in nutrient_key or "folate" in nutrient_key:
-        return "μg DFE"
-    if "วิตามินบี12" in nutrient_key or "vitamin_b12" in nutrient_key or "vitamin b12" in nutrient_key:
-        return "μg"
-    
-    # แร่ธาตุ
-    if "แคลเซียม" in nutrient_key or "calcium" in nutrient_key:
-        return "mg"
-    if "ฟอสฟอรัส" in nutrient_key or "phosphorus" in nutrient_key:
-        return "mg"
-    if "แมกนีเซียม" in nutrient_key or "magnesium" in nutrient_key:
-        return "mg"
-    if "เหล็ก" in nutrient_key or "iron" in nutrient_key:
-        return "mg"
-    if "สังกะสี" in nutrient_key or "zinc" in nutrient_key:
-        return "mg"
-    if "ไอโอดีน" in nutrient_key or "iodine" in nutrient_key:
-        return "μg"
-    if "ซีลีเนียม" in nutrient_key or "selenium" in nutrient_key:
-        return "μg"
-    if "ทองแดง" in nutrient_key or "copper" in nutrient_key:
-        return "μg"
-    if "แมงกานีส" in nutrient_key or "manganese" in nutrient_key:
-        return "mg"
-    if "โมลิบดีนัม" in nutrient_key or "molybdenum" in nutrient_key:
-        return "μg"
-    if "โครเมียม" in nutrient_key or "chromium" in nutrient_key:
-        return "μg"
-    if "โซเดียม" in nutrient_key or "sodium" in nutrient_key:
-        return "mg"
-    if "โพแทสเซียม" in nutrient_key or "potassium" in nutrient_key:
-        return "mg"
-    if "คลอไรด์" in nutrient_key or "chloride" in nutrient_key:
-        return "mg"
-    
-    # ค่าเริ่มต้น
-    return "mg"
-
-
+# ฟังก์ชันสำหรับตรวจสอบเงื่อนไขวิตามินและแร่ธาตุ
 def check_single_vitamin_mineral_claim(adjusted_values, vitamin_key, rdi_df):
     """
     ตรวจสอบการกล่าวอ้างวิตามินและแร่ธาตุ โดยพิจารณาค่า %RDI
@@ -2289,8 +2236,11 @@ def check_single_vitamin_mineral_claim(adjusted_values, vitamin_key, rdi_df):
     # ดึงค่าที่ปรับแก้แล้ว
     adjusted_value = adjusted_values.get(vitamin_key, 0)
     percent_rdi = adjusted_values.get(f"{vitamin_key}_rdi_percent", 0)
+    if is_vitamin_or_mineral(vitamin_key):
+        percent_rdi = round_rdi_percent(percent_rdi)
     
-    # ดึงค่าต่อ 100kcal (ถ้ามี)
+    
+    # ดึงค่า per 100kcal (ถ้ามี)
     percent_rdi_per_100kcal = adjusted_values.get(f"{vitamin_key}_rdi_percent_per_100kcal", 0)
     
     # ตรวจสอบว่าเป็นปริมาณที่มากพอสำหรับการกล่าวอ้าง
@@ -2424,7 +2374,7 @@ def prepare_disclaimers(nutrient_values, adjusted_values, selected_label,
                 disclaimer['message'] = (
                     f"⚠️ ปริมาณ {disclaimer['nutrient']} อยู่ในเกณฑ์ที่ต้องมีคำชี้แจง (Disclaimer) ประกอบคำกล่าวอ้าง: "
                     f"มี{disclaimer['nutrient']} {value_per_actual_serving:.1f} {disclaimer['unit']} ต่อ {actual_serving_size:.1f} {unit_text} "
-                    f"หรือมี{disclaimer['nutrient']} {disclaimer['value']:.1f} {disclaimer['unit']} ต่อ 100 {unit_text}"
+                    f"หรือ มี{disclaimer['nutrient']} {disclaimer['value']:.1f} {disclaimer['unit']} ต่อ 100 {unit_text}"
                 )
             else:
                 disclaimer['message'] = (
@@ -2534,18 +2484,18 @@ def prepare_disclaimers(nutrient_values, adjusted_values, selected_label,
                 ref_serving_size = float(group_info['serving_value'])
                 ref_unit = group_info['unit']
                 is_small_serving = ref_serving_size <= 30 and ref_unit.lower() in ["กรัม", "g", "ml", "มิลลิลิตร"]
-                display_ref_serving_size = ref_serving_size * 2 if is_small_serving else ref_serving_size
+                display_ref_size = ref_serving_size * 2 if is_small_serving else ref_serving_size
                 
                 # กรณีที่เกินทั้งสองหน่วยบริโภค
                 if in_label and in_reference:
                     message += (f"มี{nutrient} {label_value:.1f} {unit} ต่อ {actual_size_str} {ref_unit} "
-                                f"หรือ มี{nutrient} {reference_value:.1f} {unit} ต่อ {display_ref_serving_size:.1f} {ref_unit}")
+                                f"หรือ มี{nutrient} {reference_value:.1f} {unit} ต่อ {display_ref_size:.1f} {ref_unit}")
                 # กรณีที่เกินเฉพาะหน่วยบริโภคบนฉลาก
                 elif in_label:
                     message += f"มี{nutrient} {label_value:.1f} {unit} ต่อ {actual_size_str} {ref_unit}"
                 # กรณีที่เกินเฉพาะหน่วยบริโภคอ้างอิง
                 elif in_reference:
-                    message += f"มี{nutrient} {reference_value:.1f} {unit} ต่อ {display_ref_serving_size:.1f} {ref_unit}"
+                    message += f"มี{nutrient} {reference_value:.1f} {unit} ต่อ {display_ref_size:.1f} {ref_unit}"
             else:
                 # กรณีที่เกินทั้งสองหน่วยบริโภค
                 if in_label and in_reference:
@@ -2571,4 +2521,3 @@ def prepare_disclaimers(nutrient_values, adjusted_values, selected_label,
             final_results.append(combined_disclaimer)
                 
         return final_results
-

@@ -1,7 +1,7 @@
 import streamlit as st
-import easyocr
-import numpy as np
-import cv2
+# import easyocr  # Commented out temporarily due to deployment issues
+# import numpy as np  # Commented out temporarily due to deployment issues
+# import cv2  # Commented out temporarily due to deployment issues
 
 from checks import (
     check_expiry_phrases,
@@ -14,6 +14,11 @@ from checks import (
 
 def show():
     st.title("ตรวจสอบส่วนประกอบหลักของฉลาก")
+    st.warning("⚠️ ฟีเจอร์นี้ถูกปิดใช้งานชั่วคราวเนื่องจากปัญหาการ deploy")
+    st.info("กรุณาใช้ฟีเจอร์ 'ตรวจสอบข้อความจากสูตรส่วนประกอบ' แทน")
+    
+    # Commented out OCR functionality temporarily
+    """
     uploaded_file = st.file_uploader("อัปโหลดภาพฉลากอาหารของคุณที่นี่", type=['jpg', 'png', 'jpeg'])
 
     def is_image_blurry(image):
@@ -68,3 +73,4 @@ def show():
                     st.warning("⚠️ ไม่พบคำเตือนเกี่ยวกับสารก่อภูมิแพ้")
                 else:
                     st.success("✅ มีคำเตือนเกี่ยวกับสารก่อภูมิแพ้แล้ว")
+    """
