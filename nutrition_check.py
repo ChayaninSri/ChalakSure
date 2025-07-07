@@ -292,7 +292,9 @@ def evaluate_special_rule(special_rule, values_dict, label_values=None):
         return False
 
 def show():
-    st.title("ตรวจสอบคำกล่าวอ้างทางโภชนาการ")
+    st.header("ตรวจสอบข้อความกล่าวอ้างโภชนาการ")
+    st.markdown("กรุณากรอกข้อมูลผลิตภัณฑ์และข้อมูลโภชนาการเพื่อตรวจสอบความสอดคล้องของคำกล่าวอ้างตามกฎหมาย")
+    st.markdown("---")
 
     thai_rdis = load_thai_rdis()
 
@@ -310,30 +312,57 @@ def show():
     group_info = None
     food_state_value = "solid"  # Default value
     
-    group_labels = {row["food_type_th"]: row["food_type_th"] for _, row in food_groups.iterrows()}
-    food_options = ["ไม่อยู่ในบัญชีหมายเลข 2"] + list(group_labels.keys())
-    selected_label = st.selectbox("เลือกกลุ่มอาหารตามบัญชีหมายเลข 2 (พิมพ์เพื่อค้นหาได้เลย)", food_options)
+    # Flag to indicate whether reference serving size was entered manually by the user
+    is_ref_serving_user_input = False
+    
+    with st.container(border=True):
+        st.subheader("1. ข้อมูลผลิตภัณฑ์")
+        group_labels = {row["food_type_th"]: row["food_type_th"] for _, row in food_groups.iterrows()}
+        food_options = ["ไม่อยู่ในบัญชีหมายเลข 2"] + list(group_labels.keys())
+        selected_label = st.selectbox("เลือกกลุ่มอาหารตามบัญชีหมายเลข 2 (พิมพ์เพื่อค้นหาได้เลย)", food_options, key="product_group_selector")
 
-    if selected_label != "ไม่อยู่ในบัญชีหมายเลข 2":
-        group_info = food_groups[food_groups["food_type_th"] == selected_label].iloc[0]
-        st.info(f"กลุ่มนี้ใช้หน่วยบริโภคอ้างอิง: {group_info['serving_value']} {group_info['unit']}")
-        table_type = "table1"
-    else:
-        st.caption("ระบบจะใช้ตารางที่ 2 (บัญชีหมายเลข 4) ซึ่งอ้างอิงต่อ 100 กรัมหรือ 100 มิลลิลิตร")
-        food_state = st.radio(
-            "ลักษณะของอาหาร:",
-            ["ของแข็ง (กรัม)", "ของเหลว (มิลลิลิตร)"],
+        if selected_label != "ไม่อยู่ในบัญชีหมายเลข 2":
+            group_info = food_groups[food_groups["food_type_th"] == selected_label].iloc[0].copy()  # Copy to allow modification
+            missing_serving = pd.isna(group_info["serving_value"]) or str(group_info["serving_value"]).strip() == ""
+            if missing_serving:
+                st.warning("⚠️ ไม่พบข้อมูลหน่วยบริโภคอ้างอิงสำหรับรายการนี้ กรุณากรอกปริมาณผงที่ละลายน้ำในหน่วยกรัม ตามปริมาณสำหรับเตรียมเพื่อให้อยู่ในสภาพพร้อมบริโภค เช่น เครื่องดื่มผง ให้กรอกปริมาณสำหรับเตรียม 200 มิลลิลิตร วิธีบริโภค คือ 1 ซอง (30 กรัม) ละลายน้ำ 300 มิลลิลิตร จากการเทียบบัญญัติไตรยางค์ จะได้ 20 กรัม ละลายน้ำ 200 มิลลิลตร เป็นต้น")
+                manual_serving = float_input("กรอกหน่วยบริโภคอ้างอิง แล้วกด Enter:")
+                if manual_serving is None:
+                    st.error("กรุณากรอกหน่วยบริโภคอ้างอิงเพื่อดำเนินการต่อ")
+                    st.stop()
+                group_info["serving_value"] = manual_serving
+                group_info["unit"] = "กรัม"
+                is_ref_serving_user_input = True
+                st.info(f"กลุ่มนี้ใช้หน่วยบริโภคอ้างอิง: {manual_serving} กรัม")
+            else:
+                st.info(f"กลุ่มนี้ใช้หน่วยบริโภคอ้างอิง: {group_info['serving_value']} {group_info['unit']}")
+            table_type = "table1"
+        else:
+            st.caption("ระบบจะใช้ตารางที่ 2 (บัญชีหมายเลข 4) ซึ่งอ้างอิงต่อ 100 กรัมหรือ 100 มิลลิลิตร")
+            food_state = st.radio(
+                "ลักษณะของอาหาร(เมื่อพร้อมบริโภค):",
+                ["ของแข็ง (กรัม)", "ของเหลว (มิลลิลิตร)"],
+                horizontal=True
+            )
+            food_state_value = "solid" if food_state == "ของแข็ง (กรัม)" else "liquid"
+            prep_option = st.radio(
+                "สถานะผลิตภัณฑ์:",
+                ["พร้อมบริโภคแล้ว", "ต้องเตรียม (เช่น ผงชง)"],
+                horizontal=True
+            )
+            manual_prep_grams = None
+            if prep_option == "ต้องเตรียม (เช่น ผงชง)":
+                st.info("กรุณากรอกปริมาณผง (กรัม) ที่ใช้เตรียมอาหาร/เครื่องดื่มให้พร้อมบริโภค 100 มิลลิลิตร\n\nตัวอย่าง: วิธีบริโภค 1 ซอง (50 กรัม) ผสมน้ำ 200 มิลลิลิตร  → 25 กรัม ต่อ 100 มิลลิลิตร")
+                manual_prep_grams = float_input("ปริมาณผง (กรัม) ต่อ 100 มิลลิลิตร พร้อมบริโภค:")
+            table_type = "table2"
+
+    with st.container(border=True):
+        st.subheader("2. ข้อมูลโภชนาการ")
+        nutrition_check_method = st.radio(
+            "วิธีการตรวจสอบ:",
+            ["ตรวจสอบจากผลวิเคราะห์โภชนาการ (ต่อ 100 g หรือ ml)", "ตรวจสอบจากฉลากโภชนาการ (ต่อ 1 หน่วยบริโภค)"],
             horizontal=True
         )
-        food_state_value = "solid" if food_state == "ของแข็ง (กรัม)" else "liquid"
-        table_type = "table2"
-
-    # เพิ่มตัวเลือกวิธีการตรวจสอบ
-    nutrition_check_method = st.radio(
-        "วิธีการตรวจสอบ:",
-        ["ตรวจสอบจากผลวิเคราะห์โภชนาการ (ต่อ 100 g หรือ ml)", "ตรวจสอบจากฉลากโภชนาการ (ต่อ 1 หน่วยบริโภค)"],
-        horizontal=True
-    )
 
     # ปริมาณหน่วยบริโภคบนหน้าฉลาก
     actual_serving_size = st.number_input("ปริมาณหน่วยบริโภคที่ระบุในฉลาก (กรัม หรือ มิลลิลตร) *กรุณาแปลงหน่อยให้เป็น กรัม หรือ มิลลิลิตรเท่านั้น เช่น 1 ช้อนโต๊ะ = 15 มิลลิลิตร", min_value=1.0, step=1.0)
@@ -445,7 +474,16 @@ def show():
         else:
             st.warning("ไม่พบข้อมูลวิตามินและเกลือแร่ที่กรอก")
 
-    if st.button("🔍 ตรวจสอบคำกล่าวอ้าง"):
+    st.write("") # Add some space
+    if st.button("🔍 ตรวจสอบคำกล่าวอ้าง", type="primary", use_container_width=True):
+        st.markdown("---")
+        st.subheader("ผลการตรวจสอบ")
+        # ตรวจสอบกรณีต้องเตรียมแต่ไม่ได้กรอกปริมาณผง
+        if selected_label == "ไม่อยู่ในบัญชีหมายเลข 2" and 'prep_option' in locals() and prep_option == "ต้องเตรียม (เช่น ผงชง)":
+            if manual_prep_grams is None:
+                st.error("กรุณากรอกปริมาณผง (กรัม) ต่อ 100 มิลลิลิตร ก่อนทำการตรวจสอบ")
+                st.stop()
+        
         # Clear session state for report messages at the beginning of a new check
         # if "current_evaluation_messages_for_report" in st.session_state:
         #     del st.session_state.current_evaluation_messages_for_report # Clear for next run
@@ -490,7 +528,8 @@ def show():
                         adjusted_values = adjust_per_100_to_serving(
                             nutrient_values=nutrient_values, 
                             serving_size=actual_serving_size, 
-                            ref_serving_size=ref_value
+                            ref_serving_size=ref_value,
+                            is_user_input=is_ref_serving_user_input
                         )
                         
                         # สร้าง label_values จากการคำนวณผลวิเคราะห์ต่อ 100g/ml ไปเป็นค่าต่อหน่วยบริโภคปกติ
@@ -506,14 +545,22 @@ def show():
                                 # Debug removed
                         
                         if ref_value <= 30:
-                            st.info(f"สำหรับอาหารที่มีหน่วยบริโภคอ้างอิง ≤ 30 กรัม/มล.: ปรับจากค่าต่อ 100 {ref_unit} เป็นค่าต่อ {ref_value * 2} {ref_unit}")
+                            if is_ref_serving_user_input:
+                                st.info(f"สำหรับหน่วยบริโภคอ้างอิงที่ผู้ใช้กำหนด ≤ 30 {ref_unit}: ปรับจากค่าต่อ 100 {ref_unit} เป็นค่าต่อ {ref_value} {ref_unit}")
+                            else:
+                                st.info(f"สำหรับอาหารที่มีหน่วยบริโภคอ้างอิง ≤ 30 {ref_unit}: ปรับจากค่าต่อ 100 {ref_unit} เป็นค่าต่อ {ref_value * 2} {ref_unit}")
                         else:
-                            st.info(f"สำหรับอาหารที่มีหน่วยบริโภคอ้างอิง > 30 กรัม/มล.: ปรับจากค่าต่อ 100 {ref_unit} เป็นค่าต่อ {ref_value} {ref_unit}")
+                            st.info(f"สำหรับอาหารที่มีหน่วยบริโภคอ้างอิง > 30 {ref_unit}: ปรับจากค่าต่อ 100 {ref_unit} เป็นค่าต่อ {ref_value} {ref_unit}")
                     else:
                         # For nutrition label data (per serving), keep the original calculation
                         if ref_value <= 30:
-                            adjusted_multiplier = (ref_value * 2) / actual_serving_size
-                            st.info(f"สำหรับอาหารที่มีหน่วยบริโภคอ้างอิง ≤ 30 กรัม: คูณปริมาณสารอาหารด้วย ({ref_value} × 2) ÷ {actual_serving_size} = {adjusted_multiplier:.2f}")
+                            if is_ref_serving_user_input:
+                                # Do not double when the user has manually entered the reference serving size
+                                adjusted_multiplier = ref_value / actual_serving_size
+                                st.info(f"สำหรับหน่วยบริโภคอ้างอิงที่ผู้ใช้กำหนด ≤ 30 กรัม: คูณด้วย {ref_value} ÷ {actual_serving_size} = {adjusted_multiplier:.2f}")
+                            else:
+                                adjusted_multiplier = (ref_value * 2) / actual_serving_size
+                                st.info(f"สำหรับอาหารที่มีหน่วยบริโภคอ้างอิง ≤ 30 กรัม: คูณปริมาณสารอาหารด้วย ({ref_value} × 2) ÷ {actual_serving_size} = {adjusted_multiplier:.2f}")
                         else:
                             adjusted_multiplier = ref_value / actual_serving_size
                             st.info(f"สำหรับอาหารที่มีหน่วยบริโภคอ้างอิง > 30 กรัม: คูณด้วย {ref_value} ÷ {actual_serving_size} = {adjusted_multiplier:.2f}")
@@ -570,15 +617,44 @@ def show():
                     label_values = nutrient_values.copy() # This is a correct fallback.
         else:
             # This 'else' corresponds to: if selected_label == "ไม่อยู่ในบัญชีหมายเลข 2"
-            adjusted_values = create_nutrient_dict(nutrient_values, adjusted_multiplier) # adjusted_multiplier is 1.0 here by default
-            label_values = nutrient_values.copy()
+            if nutrition_check_method == "ตรวจสอบจากผลวิเคราะห์โภชนาการ (ต่อ 100 g หรือ ml)" and \
+               'prep_option' in locals() and prep_option == "ต้องเตรียม (เช่น ผงชง)" and \
+               manual_prep_grams is not None and manual_prep_grams > 0:
+                # ผู้ใช้กรอกปริมาณผงที่ใช้เตรียม 100 มิลลิลิตรพร้อมบริโภค
+                # ผลวิเคราะห์เป็นต่อ 100 กรัมผง ดังนั้นต้องคูณ (manual_prep_grams / 100)
+                conversion_factor = manual_prep_grams / 100.0
+                adjusted_values = create_nutrient_dict(nutrient_values, conversion_factor)
+                # คำนวณค่าต่อ 1 หน่วยบริโภคบนฉลาก (ปริมาณผงที่ใช้ต่อการบริโภค 1 ครั้ง)
+                label_values = {}
+                serving_conversion = actual_serving_size / 100.0  # actual_serving_size คือกรัมผงต่อหนึ่งหน่วยบริโภค
+                for key, val in nutrient_values.items():
+                    if val is not None:
+                        per_serving_val = val * serving_conversion
+                        label_values[key] = round_nutrition_value(per_serving_val, key)
+                st.info(f"🔄 ปรับค่าผลวิเคราะห์ต่อ 100 กรัมผง เป็นต่อ 100 มิลลิลิตรพร้อมบริโภค (ใช้ {manual_prep_grams:.1f} กรัมผง)")
+            else:
+                adjusted_values = create_nutrient_dict(nutrient_values, adjusted_multiplier)  # adjusted_multiplier is 1.0 by default
+                # คำนวณค่า label_values ต่อ 1 หน่วยบริโภคบนฉลากจากผลวิเคราะห์ต่อ 100 g/ml (ready-to-consume)
+                label_values = {}
+                serving_conversion = actual_serving_size / 100.0 if actual_serving_size > 0 else 1.0
+                for key, val in nutrient_values.items():
+                    if val is not None:
+                        per_serving_val = val * serving_conversion
+                        label_values[key] = round_nutrition_value(per_serving_val, key)
         
         if selected_label == "ไม่อยู่ในบัญชีหมายเลข 2" and actual_serving_size > 0:
             # Only apply conversion if checking from nutrition label (per serving)
             # Skip conversion if checking from analysis results (already per 100g/ml)
             if nutrition_check_method == "ตรวจสอบจากฉลากโภชนาการ (ต่อ 1 หน่วยบริโภค)":
-                conversion_factor = 100 / actual_serving_size
-                
+                # หากเป็นผลิตภัณฑ์ที่ต้องเตรียม (ผงชง) และมีการกรอก manual_prep_grams ให้ใช้ค่านี้ในการแปลงเป็นต่อ 100 มิลลิลิตรพร้อมบริโภค
+                if 'prep_option' in locals() and prep_option == "ต้องเตรียม (เช่น ผงชง)" and manual_prep_grams is not None and manual_prep_grams > 0:
+                    conversion_factor = manual_prep_grams / actual_serving_size
+                    st.info(f"🔄 ปรับค่าจาก {actual_serving_size:.1f} กรัมผง เป็นต่อ 100 มิลลิลิตรพร้อมบริโภค (ใช้ {manual_prep_grams:.1f} กรัม ต่อ 100 มิลลิลิตร)")
+                else:
+                    conversion_factor = 100 / actual_serving_size
+                    unit_display = "กรัม" if food_state_value == "solid" else "มิลลิลิตร"
+                    st.info(f"🔄 ทุกสารอาหารถูกคำนวณต่อ 100 {unit_display} (หน่วยบริโภคบนฉลาก {actual_serving_size} {unit_display})")
+
                 for nutrient_key, value in nutrient_values.items():
                     if value is not None:
                         # If direct RDI input for V/M, convert %RDI to absolute amount first, then scale
@@ -604,7 +680,6 @@ def show():
             else:
                 # If checking from analysis results, values are already per 100g/ml
                 unit_display = "กรัม" if food_state_value == "solid" else "มิลลิลิตร"
-                st.info(f"ใช้ค่าจากผลวิเคราะห์ต่อ 100 {unit_display} โดยตรง ไม่ต้องคำนวณ")
             
             if adjusted_values.get("energy") is not None and adjusted_values.get("energy") > 0:
                 energy_per_100 = adjusted_values["energy"]
@@ -643,13 +718,20 @@ def show():
             # กำหนดค่าตัวแปรที่จะส่งไปยังฟังก์ชัน prepare_rounded_values_display
             is_in_list_2 = selected_label != "ไม่อยู่ในบัญชีหมายเลข 2"
             serving_size_value = actual_serving_size if actual_serving_size > 0 else 0
-            ref_serving_size_value = 0
-            
-            if is_in_list_2 and group_info is not None:
+            # Determine reference serving size value for the report
+            if is_in_list_2:
+                # For foods in List 2, use the reference serving size from the food group information
                 try:
-                    ref_serving_size_value = float(group_info["serving_value"])
-                except (ValueError, TypeError):
+                    ref_serving_size_value = float(group_info["serving_value"]) if group_info is not None else 0
+                except (ValueError, TypeError, KeyError):
                     ref_serving_size_value = 0
+            else:
+                # For foods NOT in List 2, the reference is always 100 g/ml by regulation
+                ref_serving_size_value = 100
+            
+            # --- END reference serving size determination ---
+            
+
 
             # นำค่าที่ยังไม่ปัดเลขมาสร้างตารางเปรียบเทียบกับค่าที่ปัดเลขแล้ว
             rounded_display_data = prepare_rounded_values_display(
@@ -658,7 +740,8 @@ def show():
                 ref_serving_size=ref_serving_size_value,
                 is_in_list_2=is_in_list_2,
                 original_input_values=nutrient_values,
-                is_from_analysis=(nutrition_check_method == "ตรวจสอบจากผลวิเคราะห์โภชนาการ (ต่อ 100 g หรือ ml)")
+                is_from_analysis=(nutrition_check_method == "ตรวจสอบจากผลวิเคราะห์โภชนาการ (ต่อ 100 g หรือ ml)"),
+                skip_double_small_ref=is_ref_serving_user_input
             )
             
             # สร้างตารางแสดงผล
@@ -671,7 +754,7 @@ def show():
                     if group_info is not None:
                         ref_unit = group_info["unit"].lower()
                         ref_value = float(group_info["serving_value"])
-                        display_size = ref_value * 2 if ref_value <= 30 else ref_value
+                        display_size = ref_value if (ref_value <= 30 and is_ref_serving_user_input) else (ref_value * 2 if ref_value <= 30 else ref_value)
                 else:
                     unit_display = "กรัม" if food_state_value == "solid" else "มิลลิลิตร"
                 
@@ -690,7 +773,7 @@ def show():
                         serving_display = f"{serving_size_value} {ref_unit}"
                         
                         # คำนวณ reference serving display
-                        factor = 2 if ref_serving_size_value <= 30 else 1
+                        factor = 2 if (ref_serving_size_value <= 30 and not is_ref_serving_user_input) else 1
                         display_ref_size = ref_serving_size_value * factor
                         ref_serving_display = f"{display_ref_size} {ref_unit}"
                     except (TypeError, AttributeError, KeyError):
@@ -716,11 +799,14 @@ def show():
                         column_names["per_ref_serving_rounded"] = f"{ref_serving_display}ปัดเลข (อ้างอิง)"
                 else:
                     # กรณีอาหารไม่อยู่ในบัญชีหมายเลข 2 แสดงเฉพาะค่าต่อ 100g/ml
-                    df_display = df_rounded[["nutrient", "per_100g", "rounded", "unit"]]
+                    df_display = df_rounded[["nutrient", "input_value", "per_serving", "per_serving_rounded", "per_ref_serving", "per_ref_serving_rounded", "unit"]]
                     column_names = {
-                        "nutrient": "สารอาหาร", 
-                        "per_100g": "ค่าก่อนปัดเลข", 
-                        "rounded": "ค่าที่แสดงบนฉลาก", 
+                        "nutrient": "สารอาหาร",
+                        "input_value": "ค่าที่กรอก",
+                        "per_serving": "ค่าบนฉลาก",
+                        "per_serving_rounded": "ปัดเลข(ฉลาก)",
+                        "per_ref_serving": "ค่าอ้างอิง",
+                        "per_ref_serving_rounded": "ปัดเลข(อ้างอิง)",
                         "unit": "หน่วย"
                     }
                 
@@ -1733,7 +1819,7 @@ def show():
 
             # แสดง disclaimers ท้ายสุด
             if final_disclaimer_results:
-                st.markdown("### ⚠️ ข้อความที่ต้องแสดงเพิ่มเติม (Disclaimers)")
+                st.markdown("### ⚠️ ข้อความที่ต้องแสดงเพิ่มเติม (Disclaimers) ตามเงื่อนไขข้อ 2.2")
                 
                 # ตรวจสอบประเภทอาหารเพื่อแสดงคอลัมน์ให้เหมาะสม
                 if selected_label == "ไม่อยู่ในบัญชีหมายเลข 2":
@@ -1781,6 +1867,8 @@ def show():
                 "food_state_value": food_state_value if selected_label == "ไม่อยู่ในบัญชีหมายเลข 2" else (group_info['state'] if group_info is not None and isinstance(group_info, pd.Series) and 'state' in group_info else food_state_value),
                 "nutrition_check_method": nutrition_check_method,
                 "actual_serving_size": actual_serving_size,
+                "ref_serving_size": ref_serving_size_value,
+                "prep_option": locals().get("prep_option", None),
                 "has_added_sugar": has_added_sugar if table_type == "table1" else None,
                 "nutrient_inputs": nutrient_values, # Original user inputs
                 "RDI_MAPPING_ วิตามิน": RDI_MAPPING, # Pass the mapping

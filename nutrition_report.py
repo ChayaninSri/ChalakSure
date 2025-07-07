@@ -148,7 +148,15 @@ def generate_nutrition_report(report_data: dict):
     # Font and size will be set globally later, but keep bold for title
     title_run.font.bold = True 
     title_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    title_p.paragraph_format.space_after = Pt(18)
+    title_p.paragraph_format.space_after = Pt(12)
+
+    # Add disclaimer box
+    disclaimer_p = document.add_paragraph()
+    disclaimer_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    disclaimer_run = disclaimer_p.add_run("⚠️ คำเตือน: แอปพลิเคชันนี้เป็นตัวช่วยในการคำนวณและตรวจสอบฉลากอาหารเท่านั้น \nไม่สามารถใช้เป็นเงื่อนไขการขออนุญาต หรืออ้างอิงทางกฎหมายได้ \nโปรดปฏิบัติตามกฎหมายอย่างเคร่งครัด")
+    disclaimer_run.font.bold = True
+    disclaimer_run.font.color.rgb = COLOR_WARNING
+    disclaimer_p.paragraph_format.space_after = Pt(18)
 
     # 1. User Inputs Section
     add_styled_heading(document, "ข้อมูลที่ผู้ใช้กรอก", level=2, section_number="1.")
@@ -165,6 +173,12 @@ def generate_nutrition_report(report_data: dict):
         warning_p.paragraph_format.space_after = Pt(8)
     
     add_styled_paragraph(document, f"ปริมาณหน่วยบริโภคที่ระบุในฉลาก: {report_data.get('actual_serving_size', 'N/A')} g/ml")
+    # Reference serving size paragraph (always shown)
+    unit_text = 'กรัม' if report_data.get('food_state_value') == 'solid' else 'มิลลิลิตร'
+    add_styled_paragraph(document, f"ปริมาณหน่วยบริโภคอ้างอิง: {report_data.get('ref_serving_size', 'N/A')} {unit_text}")
+    # Product consumption status (only for foods not in List 2)
+    if not report_data.get('is_in_list_2', False):
+        add_styled_paragraph(document, f"สถานะผลิตภัณฑ์: {report_data.get('prep_option', 'N/A')}")
     if report_data.get('table_type') == "table1" and report_data.get('has_added_sugar') is not None:
         add_styled_paragraph(document, f"การเติมน้ำตาล: {report_data.get('has_added_sugar', 'N/A')}")
     

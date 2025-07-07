@@ -1,10 +1,27 @@
 import streamlit as st
 
 st.set_page_config(
-    page_title="แอปตรวจสอบฉลากอาหาร",
-    page_icon="🍱",
-    layout="wide"
+    page_title="ฉลากชัวร์",
+    page_icon="✅",
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
+
+def load_css(file_name):
+    with open(file_name) as f:
+        st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+
+load_css(".streamlit/style.css")
+
+def show_disclaimer():
+    st.markdown("""
+    <div class="disclaimer-box">
+        <p>🚨 ข้อควรระวัง</p>
+        <p>
+            แอปพลิเคชันนี้เป็นตัวช่วยในการคำนวณและตรวจสอบฉลากอาหารเท่านั้น ไม่สามารถใช้เป็นเงื่อนไขการขออนุญาต หรืออ้างอิงทางกฎหมายได้ โปรดปฏิบัติตามกฎหมายอย่างเคร่งครัด
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
 
 import main_page
 # import ocr_check  # Commented out temporarily due to deployment issues
@@ -22,6 +39,9 @@ page = st.sidebar.radio(
         "ตรวจสอบข้อความกล่าวอ้างโภชนาการ"
     )
 )
+
+# Show disclaimer on all pages
+show_disclaimer()
 
 if page == "หน้าหลัก":
     main_page.show()
