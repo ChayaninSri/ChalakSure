@@ -182,7 +182,8 @@ def format_nutrition_display(value: Optional[float], nutrient_type: str = "other
 def adjust_per_100_to_serving(
     nutrient_values: Dict[str, Optional[float]], 
     serving_size: float,
-    ref_serving_size: float
+    ref_serving_size: float,
+    is_user_input: bool = False
 ) -> Dict[str, Optional[float]]:
     """
     Adjust nutrition values from per 100g/ml to the actual serving size,
@@ -209,7 +210,8 @@ def adjust_per_100_to_serving(
     adjustment_factor = conversion_factor * reference_factor
     
     # Apply special handling for small reference serving sizes (≤ 30g/ml)
-    if ref_serving_size <= 30:
+    # Skip doubling if the reference serving size was provided manually by the user
+    if ref_serving_size <= 30 and not is_user_input:
         # For small servings, use 2x the reference serving size per regulations
         adjustment_factor = conversion_factor * (2 * ref_serving_size) / serving_size
     
@@ -281,7 +283,8 @@ def prepare_rounded_values_display(
     ref_serving_size: float = 0,
     is_in_list_2: bool = False,
     original_input_values: Dict[str, Optional[float]] = None,
-    is_from_analysis: bool = False
+    is_from_analysis: bool = False,
+    skip_double_small_ref: bool = False
 ) -> List[Dict[str, Any]]:
     """
     Prepare a display of original and rounded values for nutrition facts.
@@ -298,6 +301,14 @@ def prepare_rounded_values_display(
         List of dictionaries containing displayed information about values at different stages
     """
     result = []
+    
+    # Helper to format values consistently
+    def _format_value(val: Optional[float]) -> str:
+        if val is None:
+            return "-"
+        if val < 0:  # negative flags already handled later for rounded, but keep sign here
+            return str(val)
+        return f"{val:.3f}" if val < 100 else f"{val:.1f}"
     
     # Dictionary to map keys to Thai nutrient names and units
     nutrient_display_info = {
@@ -336,6 +347,11 @@ def prepare_rounded_values_display(
             else:
                 unit = "มิลลิกรัม"  # mg
         
+        # Capture raw input value (ค่าที่กรอก) if provided by the user
+        input_value = None
+        if original_input_values and key in original_input_values and original_input_values[key] is not None:
+            input_value = original_input_values[key]
+        
         # Round the value
         rounded_value = round_nutrition_value(original_value, key)
         
@@ -356,13 +372,15 @@ def prepare_rounded_values_display(
             # คำนวณค่าต่อหน่วยบริโภคอ้างอิงจากค่าดิบที่ผู้ใช้กรอก (กรณีเป็นค่าวิเคราะห์ต่อ 100g/ml)
             if is_in_list_2 and ref_serving_size > 0:
                 multiplier = ref_serving_size / 100
-                if ref_serving_size <= 30:
+                if ref_serving_size <= 30 and not skip_double_small_ref:
                     multiplier = (ref_serving_size * 2) / 100
+                else:
+                    multiplier = ref_serving_size / 100
                 per_ref_serving_value = per_100g_value * multiplier
                 per_ref_serving_rounded_value = round_nutrition_value(per_ref_serving_value, key)
         elif is_in_list_2 and serving_size > 0:
             # Calculate value per 100g (undo the adjustments)
-            if ref_serving_size <= 30:
+            if ref_serving_size <= 30 and not skip_double_small_ref:
                 # For foods with reference serving size <= 30g/ml
                 adjustment_factor = serving_size / 100 * (2 * ref_serving_size) / serving_size
                 per_100g_value = original_value / adjustment_factor if adjustment_factor != 0 else 0
@@ -374,11 +392,23 @@ def prepare_rounded_values_display(
             # คำนวณค่าต่อหน่วยบริโภคอ้างอิงจากค่าดิบที่ผู้ใช้กรอก (กรณีเป็นค่าจากฉลากต่อหน่วยบริโภค)
             if original_input_values and key in original_input_values and ref_serving_size > 0:
                 # หาอัตราส่วนจากหน่วยบริโภคบนฉลากไปเป็นหน่วยบริโภคอ้างอิง
-                if ref_serving_size <= 30:
+                if ref_serving_size <= 30 and not skip_double_small_ref:
                     reference_factor = (ref_serving_size * 2) / serving_size
                 else:
                     reference_factor = ref_serving_size / serving_size
                 per_ref_serving_value = original_input_values[key] * reference_factor
+                per_ref_serving_rounded_value = round_nutrition_value(per_ref_serving_value, key)
+        
+        # For products NOT in list 2, we still want to populate per_serving and reference values
+        if not is_in_list_2:
+            # per_serving_value comes directly from user input when available (label method)
+            if per_serving_value is None and input_value is not None:
+                per_serving_value = input_value
+                per_serving_rounded_value = round_nutrition_value(per_serving_value, key)
+            # Reference value: per 100 g/ml ready-to-eat or derived conversion already present in original_value
+            if per_ref_serving_value is None:
+                # ใช้ค่า original_value (ซึ่งถูกแปลงเป็นต่อ 100 g/ml พร้อมบริโภคแล้ว) เป็นค่าอ้างอิงหลัก
+                per_ref_serving_value = original_value
                 per_ref_serving_rounded_value = round_nutrition_value(per_ref_serving_value, key)
         
         # Calculate value per serving size (only if we have per_100g_value)
@@ -388,16 +418,14 @@ def prepare_rounded_values_display(
             # Calculate rounded value per serving size
             per_serving_rounded_value = round_nutrition_value(per_serving_value, key)
         
-        # Calculate display strings for per 100g, per serving, per ref serving
-        per_100g_display = f"{per_100g_value:.3f}" if per_100g_value is not None and per_100g_value < 100 else \
-                           f"{per_100g_value:.1f}" if per_100g_value is not None else "-"
+        # Format displays for all numeric columns
+        input_value_display = _format_value(input_value)
+        per_100g_display = _format_value(per_100g_value)
                            
-        per_serving_display = f"{per_serving_value:.3f}" if per_serving_value is not None and per_serving_value < 100 else \
-                              f"{per_serving_value:.1f}" if per_serving_value is not None else "-"
+        per_serving_display = _format_value(per_serving_value)
                               
         # ปรับรูปแบบการแสดงค่าต่อหน่วยบริโภคอ้างอิงให้เหมือนคอลัมน์อื่นๆ
-        per_ref_serving_display = f"{per_ref_serving_value:.3f}" if per_ref_serving_value is not None and per_ref_serving_value < 100 else \
-                                  f"{per_ref_serving_value:.1f}" if per_ref_serving_value is not None else "-"
+        per_ref_serving_display = _format_value(per_ref_serving_value)
         
         # Format the rounded values for display
         # For serving size rounded value
@@ -464,6 +492,7 @@ def prepare_rounded_values_display(
         # Add to result
         result.append({
             "nutrient": nutrient_name,
+            "input_value": input_value_display,
             "per_100g": per_100g_display,
             "per_serving": per_serving_display,
             "per_serving_rounded": per_serving_rounded_display,
@@ -474,4 +503,4 @@ def prepare_rounded_values_display(
             "key": key
         })
     
-    return result 
+    return result
