@@ -14,7 +14,7 @@ def normalize_ins(s):
     return re.sub(r"\s+", "", str(s)).lower()
 
 def show():
-    st.title("ตรวจสอบการแสดงข้อความของสูตรส่วนประกอบ")
+    st.title("ตรวจสอบการแสดงข้อความของสูตรส่วนประกอบ (อยู่ระหว่างพัฒนา)")
 
     # Initialize session state for dynamic fields
     if "main_ingredient_count" not in st.session_state:

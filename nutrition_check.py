@@ -1592,12 +1592,11 @@ def show():
                 st.success(claim_text_to_show)
                 st.session_state.current_evaluation_messages_for_report.append({"text": claim_text_to_show, "is_success": True, "conditions_text": None})
 
-                # --- NEW: Fat warning for List 2 fiber claims ---
+                # --- NEW: Fat warning for List 2 fiber and protein claims ---
                 if (
-                    nutrient_key == "fiber"
-                    and selected_label != "ไม่อยู่ในบัญชีหมายเลข 2"
-                    and adjusted_values.get("fiber_rdi_percent", 0) >= 10
-                ):
+                    (nutrient_key == "fiber" and adjusted_values.get("fiber_rdi_percent", 0) >= 10) or
+                    (nutrient_key == "protein" and adjusted_values.get("protein_rdi_percent", 0) >= 10)
+                ) and selected_label != "ไม่อยู่ในบัญชีหมายเลข 2":
                     fat_ref = adjusted_values.get("fat")
                     fat_label = label_values.get("fat") if label_values else None
                     fat_ref_in_range = fat_ref is not None and 3 < fat_ref <= 13
