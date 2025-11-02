@@ -1,7 +1,7 @@
 import streamlit as st
 
 def show():
-    st.title("ระบบตรวจสอบฉลากอาหาร")
+    st.title("ฉลากชัวร์ 2.0")
     st.write("กรุณาเลือกเมนูจากแถบด้านซ้ายเพื่อเริ่มต้นการตรวจสอบ")
     
     # Add program information

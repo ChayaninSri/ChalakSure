@@ -17,7 +17,7 @@ st.set_page_config(
 )
 
 import main_page
-# import ocr_check  # Commented out temporarily due to deployment issues
+import ocr_check
 import Label_check
 import nutrition_check
 
@@ -27,8 +27,8 @@ page = st.sidebar.radio(
     "เลือกหมวดที่ต้องการตรวจสอบ",
     (
         "หน้าหลัก",
-        # "ตรวจสอบองค์ประกอบฉลากจากภาพ",  # Commented out temporarily
-        "ตรวจสอบฉลากอาหาร",
+        "ตรวจสอบฉลากจากภาพด้วย AI",  
+        "ตรวจสอบข้อมูลที่ต้องแสดงในฉลากอาหาร",
         "ตรวจสอบข้อความกล่าวอ้างโภชนาการ"
     )
 )
@@ -38,9 +38,9 @@ show_disclaimer()
 
 if page == "หน้าหลัก":
     main_page.show()
-# elif page == "ตรวจสอบองค์ประกอบฉลากจากภาพ":  # Commented out temporarily
-#     ocr_check.show()
-elif page == "ตรวจสอบฉลากอาหาร":
+elif page == "ตรวจสอบฉลากจากภาพด้วย AI":  
+    ocr_check.show()
+elif page == "ตรวจสอบข้อมูลที่ต้องแสดงในฉลากอาหาร":
     Label_check.show()
 elif page == "ตรวจสอบข้อความกล่าวอ้างโภชนาการ":
     nutrition_check.show()
