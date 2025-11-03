@@ -112,16 +112,8 @@ def generate_oryor_badge(reg_number):
 
 def prepare_preview_image_entries(registration_number, include_gda=True, include_nutrition=True):
     entries = []
-    oryor_badge = generate_oryor_badge(registration_number)
-    if oryor_badge:
-        entries.append(
-            {
-                "image": oryor_badge,
-                "caption": "เครื่องหมาย อย. พร้อมเลขสารบบ",
-                "width": Inches(1.2),
-            }
-        )
-    elif ORYOR_IMAGE_PATH.exists():
+    # ยกเลิกการทำ overlay เลขสารบบอาหารบนรูปเครื่องหมาย อย. แสดงรูปมาตรฐานเท่านั้น
+    if ORYOR_IMAGE_PATH.exists():
         entries.append(
             {
                 "image": ORYOR_IMAGE_PATH,
@@ -274,6 +266,7 @@ def build_label_preview_context(
     maybe_allergen_groups,
     has_desiccant,
     ordered_labels,
+    single_ingredient_only: bool = False,
 ):
     """Aggregate data points for the label preview box."""
     main_ingredients = main_ingredients or []
@@ -380,14 +373,16 @@ def build_label_preview_context(
     ingredient_suffix = " (พร้อมแสดงปริมาณ)" if is_supplement else " (พร้อมแสดงร้อยละของน้ำหนักโดยประมาณของส่วนประกอบ)"
     ingredient_has_value = bool(cleaned_ingredients)
     ingredient_value = ingredients_text if ingredient_has_value else ingredients_placeholder
-    append_line(
-        {
-            "label": "ส่วนประกอบ",
-            "value": ingredient_value,
-            "display_value": f"{ingredient_value}{ingredient_suffix}",
-            "is_placeholder": not ingredient_has_value,
-        }
-    )
+    # หากเลือกกรณีมีส่วนประกอบอย่างเดียว ให้ไม่แสดงหัวข้อ 'ส่วนประกอบ' ในตัวอย่างฉลาก
+    if not single_ingredient_only:
+        append_line(
+            {
+                "label": "ส่วนประกอบ",
+                "value": ingredient_value,
+                "display_value": f"{ingredient_value}{ingredient_suffix}",
+                "is_placeholder": not ingredient_has_value,
+            }
+        )
     append_line(
         {
             "label": None,
@@ -753,6 +748,7 @@ def generate_label_word_report(report_data):
         report_data.get('maybe_allergen_groups', []),
         report_data.get('has_desiccant'),
         required_labels,
+        single_ingredient_only=report_data.get('single_ingredient_only', False),
     )
 
     label_table = document.add_table(rows=1, cols=2)
@@ -1480,6 +1476,7 @@ def generate_label_report(food_name, food_type, food_consistency, main_ingredien
         maybe_allergen_groups,
         has_desiccant,
         ordered_labels,
+        single_ingredient_only=single_ingredient_only,
     )
 
     # ข้อมูลที่ต้องมีในฉลาก
@@ -1628,7 +1625,8 @@ def generate_label_report(food_name, food_type, food_consistency, main_ingredien
         'required_labels': ordered_labels,
         'has_desiccant': has_desiccant,
         'caffeine_option': caffeine_option,
-        'container_type': container_type
+        'container_type': container_type,
+        'single_ingredient_only': single_ingredient_only,
     }
     
     # ปุ่มดาวน์โหลดรายงาน
