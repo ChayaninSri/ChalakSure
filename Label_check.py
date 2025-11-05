@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import re
+ 
 from datetime import datetime
 from pathlib import Path
 from docx import Document
@@ -425,7 +426,11 @@ def build_label_preview_context(
             }
         )
 
-    if has_allergen and allergen_groups:
+    # แสดงบรรทัด "ข้อมูลสำหรับผู้แพ้อาหาร" ในตัวอย่างฉลาก เฉพาะเมื่ออยู่ในรายการ "ข้อมูลที่ต้องมีในฉลาก"
+    requires_allergen_note = any(
+        "ข้อมูลสำหรับผู้แพ้อาหาร" in str(lbl) for lbl in (ordered_labels or [])
+    )
+    if requires_allergen_note and has_allergen and allergen_groups:
         append_line(
             {
                 "label": None,
@@ -435,7 +440,7 @@ def build_label_preview_context(
             target="post_ingredient",
         )
 
-    if maybe_allergen and maybe_allergen_groups:
+    if requires_allergen_note and maybe_allergen and maybe_allergen_groups:
         append_line(
             {
                 "label": None,
@@ -551,6 +556,11 @@ def build_label_preview_context(
     additive_lines = [
         line for line in post_ingredient_lines if "วัตถุเจือปนอาหาร" in line.get("value", "")
     ]
+    # ตัด prefix "วัตถุเจือปนอาหาร:" ออกจากตัวอย่างฉลาก (เช่น บรรทัดสี)
+    for _line in additive_lines:
+        _val = str(_line.get("value", ""))
+        if _val.startswith("วัตถุเจือปนอาหาร:"):
+            _line["display_value"] = _val.split(":", 1)[1].strip()
     flavor_lines = [
         line
         for line in post_ingredient_lines
@@ -939,6 +949,14 @@ def show():
     def add_ins():
         st.session_state.ins_count += 1
 
+    # Helper: when a suggestion is clicked, fill the input
+    def _set_main_ing(idx: int, val: str):
+        st.session_state[f"main_ing_{idx}"] = val
+
+    # (previous version) We don't use a dropdown; suggestions are clickable chips
+
+    
+
     # 1. ชื่ออาหาร
     st.subheader("1. ชื่ออาหาร (ตามที่ขึ้นทะเบียน)")
     food_name = st.text_input("กรอกชื่ออาหาร", placeholder="เช่น ขนมปังโฮลวีท")
@@ -1011,9 +1029,31 @@ def show():
         key="single_ingredient_only"
     )
     
+    # Main ingredients with inline suggestions from warnings_database
+    try:
+        _warnings_db = load_warnings_database()
+        _warning_keywords = (
+            _warnings_db["keyword"].dropna().astype(str).str.strip().tolist()
+            if "keyword" in _warnings_db.columns else []
+        )
+    except Exception:
+        _warning_keywords = []
+
     main_ingredients = []
     for i in range(st.session_state.main_ingredient_count):
         main_ing = st.text_input(f"ส่วนประกอบหลัก {i+1}", key=f"main_ing_{i}")
+
+        # Show suggestions when user types >= 2 chars; keep free text otherwise
+        q = (main_ing or "").strip()
+        if q and len(q) >= 2 and _warning_keywords:
+            suggs = [kw for kw in _warning_keywords if q.lower() in kw.lower()][:8]
+            if suggs:
+                st.caption("ท่านหมายถึงส่วนประกอบเหล่านี้หรือไม่ หากใช่กรุณาคลิก")
+                cols = st.columns(min(len(suggs), 4))
+                for j, s in enumerate(suggs):
+                    with cols[j % len(cols)]:
+                        st.button(s, key=f"ing_suggest_{i}_{j}", on_click=_set_main_ing, args=(i, s))
+
         if main_ing:
             main_ingredients.append(main_ing)
     # Add button after the last main ingredient input
@@ -1061,6 +1101,7 @@ def show():
     # INS section
     st.markdown("**วัตถุเจือปนอาหาร**")
     
+    st.caption("ตัวอย่าง: 160b(ii) กรณีมีเลขโรมันต้องมีวงเล็บครอบ")
     ins_list = []
     for i in range(st.session_state.ins_count):
         ins = st.text_input(f"เลข INS {i+1}", key=f"ins_{i}")
@@ -1348,10 +1389,18 @@ def generate_label_report(food_name, food_type, food_consistency, main_ingredien
     
     # การกล่าวอ้างโภชนาการ
     st.markdown("### 📊 การกล่าวอ้างโภชนาการ")
+    # เช็คว่าจะต้องมี GDA อยู่แล้วหรือไม่ เพื่อหลีกเลี่ยงการแจ้งซ้ำเรื่อง "ตารางโภชนาการ"
+    requires_gda_ui = (
+        food_type != "อื่นๆ (ที่ไม่ใช่อาหารควบคุมเฉพาะ)" and
+        food_type != "วุ้นสำเร็จรูป" and
+        food_type != "ผลิตภัณฑ์เสริมอาหาร"
+    )
     if has_nutrition_claim:
         st.warning("⚠️ **มีการกล่าวอ้างโภชนาการ**")
-        st.info("📋 **หมายเหตุ**: ฉลากต้องมีตารางโภชนาการด้วย")
-        required_labels.append("ตารางโภชนาการ")
+        if not requires_gda_ui:
+            st.info("📋 **หมายเหตุ**: ฉลากต้องมีตารางโภชนาการด้วย")
+        if not any("ตารางโภชนาการ" in str(x) for x in required_labels):
+            required_labels.append("ต้องแสดงตารางโภชนาการ")
     else:
         st.success("✅ **ไม่มีการกล่าวอ้างโภชนาการ**")
     
@@ -1359,7 +1408,8 @@ def generate_label_report(food_name, food_type, food_consistency, main_ingredien
     if food_type != "อื่นๆ (ที่ไม่ใช่อาหารควบคุมเฉพาะ)" and food_type != "วุ้นสำเร็จรูป" and food_type != "ผลิตภัณฑ์เสริมอาหาร":
         st.warning("⚠️ **ประเภทอาหารที่ต้องแสดงฉลาก GDA**: ต้องแสดงฉลาก GDA และตารางโภชนาการตามประกาศฯ 394")
         required_labels.append("ต้องแสดงฉลาก GDA ตามประกาศฯ 394")
-        required_labels.append("ต้องแสดงตารางโภชนาการ")
+        if not any("ตารางโภชนาการ" in str(x) for x in required_labels):
+            required_labels.append("ต้องแสดงตารางโภชนาการ")
     
     # คำเตือนเฉพาะตามประเภทอาหาร
     st.markdown("### ⚠️ คำเตือนเฉพาะตามประเภทอาหาร")
@@ -1435,10 +1485,17 @@ def generate_label_report(food_name, food_type, food_consistency, main_ingredien
     if foreign_manufacturer_line:
         ordered_labels.append(f"{foreign_manufacturer_line}")
 
-    # 6. ฉลาก GDA และตารางโภชนาการ (สำหรับอาหารที่ต้องแสดง)
-    if food_type != "อื่นๆ (ที่ไม่ใช่อาหารควบคุมเฉพาะ)" and food_type != "วุ้นสำเร็จรูป" and food_type != "ผลิตภัณฑ์เสริมอาหาร":
+    # 6. ฉลาก GDA และตารางโภชนาการ (แสดงครั้งเดียวถ้าเข้าได้หลายเงื่อนไข)
+    requires_gda = (
+        food_type != "อื่นๆ (ที่ไม่ใช่อาหารควบคุมเฉพาะ)"
+        and food_type != "วุ้นสำเร็จรูป"
+        and food_type != "ผลิตภัณฑ์เสริมอาหาร"
+    )
+    if requires_gda:
         ordered_labels.append("ต้องแสดงฉลาก GDA ตามประกาศฯ 394")
-        ordered_labels.append("ต้องแสดงตารางโภชนาการ")
+    if has_nutrition_claim or requires_gda:
+        if not any("ตารางโภชนาการ" in str(x) for x in ordered_labels):
+            ordered_labels.append("ต้องแสดงตารางโภชนาการ")
 
     # 7. อื่นๆที่เหลือ (วัตถุเจือปนอาหาร, สารก่อภูมิแพ้, การกล่าวอ้างโภชนาการ, คำเตือน, ข้อมูลเพิ่มเติม)
     for label in required_labels:
