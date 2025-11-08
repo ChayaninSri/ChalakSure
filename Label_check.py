@@ -974,7 +974,6 @@ def show():
             "อาหารมื้อหลักที่เป็นอาหารจานเดียว ซึ่งต้องเก็บรักษาไว้ในตู้เย็นหรือตู้แช่แข็งตลอดระยะเวลาจำหน่าย",
             "เครื่องดื่มในภาชนะบรรจุที่ปิดสนิท",
             "ชาปรุงสำเร็จ ทั้งชนิดเหลวและชนิดแห้ง",
-            "ชาจากพืช",
             "กาแฟปรุงสำเร็จ ทั้งชนิดเหลวและชนิดแห้ง",
             "นมปรุงแต่ง",
             "นมเปรี้ยว",
@@ -982,7 +981,8 @@ def show():
             "น้ำนมถั่วเหลือง",
             "ไอศกรีมที่อยู่ในลักษณะพร้อมบริโภค",
             "วุ้นสำเร็จรูป",
-            "ผลิตภัณฑ์เสริมอาหาร"
+            "ผลิตภัณฑ์เสริมอาหาร",
+            "ชาจากพืช"
         ]
     )
     
@@ -1397,7 +1397,8 @@ def generate_label_report(food_name, food_type, food_consistency, main_ingredien
     requires_gda_ui = (
         food_type != "อื่นๆ (ที่ไม่ใช่อาหารควบคุมเฉพาะ)" and
         food_type != "วุ้นสำเร็จรูป" and
-        food_type != "ผลิตภัณฑ์เสริมอาหาร"
+        food_type != "ผลิตภัณฑ์เสริมอาหาร" and
+        food_type != "ชาจากพืช"
     )
     if has_nutrition_claim:
         st.warning("⚠️ **มีการกล่าวอ้างโภชนาการ**")
@@ -1409,7 +1410,7 @@ def generate_label_report(food_name, food_type, food_consistency, main_ingredien
         st.success("✅ **ไม่มีการกล่าวอ้างโภชนาการ**")
     
     # ตรวจสอบประเภทอาหารที่ต้องแสดงฉลาก GDA และตารางโภชนาการ
-    if food_type != "อื่นๆ (ที่ไม่ใช่อาหารควบคุมเฉพาะ)" and food_type != "วุ้นสำเร็จรูป" and food_type != "ผลิตภัณฑ์เสริมอาหาร":
+    if food_type != "อื่นๆ (ที่ไม่ใช่อาหารควบคุมเฉพาะ)" and food_type != "วุ้นสำเร็จรูป" and food_type != "ผลิตภัณฑ์เสริมอาหาร" and food_type != "ชาจากพืช":
         st.warning("⚠️ **ประเภทอาหารที่ต้องแสดงฉลาก GDA**: ต้องแสดงฉลาก GDA และตารางโภชนาการตามประกาศฯ 394")
         required_labels.append("ต้องแสดงฉลาก GDA ตามประกาศฯ 394")
         if not any("ตารางโภชนาการ" in str(x) for x in required_labels):
@@ -1499,6 +1500,7 @@ def generate_label_report(food_name, food_type, food_consistency, main_ingredien
         food_type != "อื่นๆ (ที่ไม่ใช่อาหารควบคุมเฉพาะ)"
         and food_type != "วุ้นสำเร็จรูป"
         and food_type != "ผลิตภัณฑ์เสริมอาหาร"
+        and food_type != "ชาจากพืช"
     )
     if requires_gda:
         ordered_labels.append("ต้องแสดงฉลาก GDA ตามประกาศฯ 394")
