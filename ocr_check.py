@@ -16,7 +16,7 @@ import streamlit as st
 # - หากคุณใช้ปลายทาง/โมเดลที่ปรับแต่งเอง ให้แก้ URL/Headers ในส่วน Config ด้านล่าง
 
 
-DEFAULT_MODEL = "gemini-2.5-pro"
+DEFAULT_MODEL = "gemini-3-pro-preview"
 DEFAULT_API_BASE = "https://generativelanguage.googleapis.com/v1beta/models"
 LOCKED_PROMPT = "ตรวจสอบเบื้องต้นจากภาพฉลาก"
 
