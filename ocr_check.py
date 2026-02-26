@@ -42,17 +42,20 @@ def _extract_text_from_glm_response(data: Dict[str, Any]) -> str:
         return json.dumps(data, ensure_ascii=False)
 
 
-def _build_glm_payload(user_text: str, image_bytes: Optional[bytes], image_mime: Optional[str]) -> Dict[str, Any]:
+def _build_glm_payload(user_text: str, images: Optional[List[tuple]]) -> Dict[str, Any]:
     parts: List[Dict[str, Any]] = []
     if user_text:
         parts.append({"text": user_text})
-    if image_bytes is not None and image_mime:
-        parts.append({
-            "inline_data": {
-                "mime_type": image_mime,
-                "data": _b64(image_bytes),
-            }
-        })
+        
+    if images:
+        for image_bytes, image_mime in images:
+            if image_bytes and image_mime:
+                parts.append({
+                    "inline_data": {
+                        "mime_type": image_mime,
+                        "data": _b64(image_bytes),
+                    }
+                })
 
     system_instruction = """{
   "instructions": "คุณคือ AI ผู้เชี่ยวชาญด้านกฎหมายอาหารของประเทศไทย หน้าที่ของคุณคือวิเคราะห์และตรวจสอบฉลากอาหารที่ผู้ใช้อัปโหลดว่าถูกต้องหรือไม่ โดยอ้างอิงตามประกาศกระทรวงสาธารณสุข ฉบับที่ 450 พ.ศ. 2567 และแนวทางปฏิบัติล่าสุดที่เกี่ยวข้อง คุณต้องระบุชัดเจนว่าฉลากมีข้อผิดพลาดหรือขาดข้อมูลใดบ้าง พร้อมอ้างข้อกฎหมายที่เกี่ยวข้อง",
@@ -91,7 +94,7 @@ def _build_glm_payload(user_text: str, image_bytes: Optional[bytes], image_mime:
         "contents": [
             {
                 "role": "user",
-                "parts": parts or [{"text": "กรุณาวิเคราะห์ฉลากอาหารจากรูปภาพ"}],
+                "parts": parts or [{"text": "กรุณาวิเคราะห์ฉลากอาหารจากรูปภาพทั้งหมดนี้รวมกัน"}],
             }
         ],
     }
@@ -111,8 +114,8 @@ def _send_to_google_ai(model: str, api_key: str, api_base: str, payload: Dict[st
 def _ensure_state():
     if "ocr_chat" not in st.session_state:
         st.session_state["ocr_chat"] = []
-    if "ocr_image" not in st.session_state:
-        st.session_state["ocr_image"] = None
+    if "ocr_images" not in st.session_state:
+        st.session_state["ocr_images"] = []  # เก็บเป็น list ของ (bytes, mime)
 
 
 def show():
@@ -139,18 +142,28 @@ def show():
             st.session_state["ocr_chat"] = []
             st.success("ล้างประวัติแล้ว")
 
-    uploaded = st.file_uploader("อัปโหลดภาพฉลาก (JPEG/PNG)", type=["jpg", "jpeg", "png"])
-    if uploaded is not None:
-        img_bytes = uploaded.read()
-        mime = uploaded.type or "image/jpeg"
-        st.session_state["ocr_image"] = (img_bytes, mime)
-        st.image(img_bytes, caption="ภาพฉลากที่อัปโหลด", use_container_width=True)
+    uploaded_files = st.file_uploader("อัปโหลดภาพฉลาก (JPEG/PNG) - อัปโหลดได้หลายภาพ", type=["jpg", "jpeg", "png"], accept_multiple_files=True)
+    
+    if uploaded_files:
+        st.session_state["ocr_images"] = []
+        # แสดงภาพเป็นคอลัมน์เพื่อให้ดูสวยงาม
+        cols = st.columns(min(len(uploaded_files), 3) if len(uploaded_files) > 0 else 1)
+        
+        for i, file in enumerate(uploaded_files):
+            img_bytes = file.read()
+            mime = file.type or "image/jpeg"
+            st.session_state["ocr_images"].append((img_bytes, mime))
+            
+            with cols[i % len(cols)]:
+                st.image(img_bytes, caption=f"ภาพที่ {i+1}", use_container_width=True)
 
     for msg in st.session_state["ocr_chat"]:
         with st.chat_message(msg["role"]):
             st.markdown(msg["text"])
 
-    send_disabled = st.session_state.get("ocr_image") is None
+    send_disabled = len(st.session_state.get("ocr_images", [])) == 0
+    if send_disabled:
+        st.info("อัปโหลดภาพฉลากก่อน แล้วกดปุ่มเพื่อส่งคำขอวิเคราะห์")
     send_request = st.button("ส่งคำขอวิเคราะห์", use_container_width=True, disabled=send_disabled)
 
     if send_request:
@@ -159,9 +172,8 @@ def show():
         with st.chat_message("user"):
             st.markdown(user_prompt)
 
-        image_tuple = st.session_state.get("ocr_image")
-        image_bytes, mime = (image_tuple if image_tuple else (None, None))
-        payload = _build_glm_payload(user_prompt, image_bytes, mime)
+        images = st.session_state.get("ocr_images", [])
+        payload = _build_glm_payload(user_prompt, images)
 
         if not api_key:
             assistant_text = "กรุณาใส่ API Key ในแถบด้านซ้ายก่อนที่จะส่งคำขอ"
