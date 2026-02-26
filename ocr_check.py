@@ -12,11 +12,16 @@ import streamlit as st
 #   ใส่ค่า API Key ในช่องด้านซ้าย หรือกำหนดเป็นตัวแปรแวดล้อมชื่อ GOOGLE_API_KEY
 #   รูปแบบปลายทาง (Endpoint) เริ่มต้นจะเป็น
 #   https://generativelanguage.googleapis.com/v1beta/models/{MODEL}:generateContent?key={API_KEY}
-#   โดยทั่วไปค่า Header ไม่ต้องใส่ Authorization เพิ่มเติมหากใช้ query param 'key'
 # - หากคุณใช้ปลายทาง/โมเดลที่ปรับแต่งเอง ให้แก้ URL/Headers ในส่วน Config ด้านล่าง
 
 
-DEFAULT_MODEL = "gemini-3-pro-preview"
+# รายการโมเดลที่แนะนำให้ลอง (ไล่ลำดับจากตัวที่มีโอกาสเปิดใน Free Tier มากที่สุดไปน้อยที่สุด)
+FALLBACK_MODELS = [
+    "gemini-2.0-flash",       # รุ่นใหม่ล่าสุด
+    "gemini-1.5-flash",       # รุ่น flash พื้นฐาน
+    "gemini-2.5-flash",       # อาจจะโดนจำกัด
+]
+
 DEFAULT_API_BASE = "https://generativelanguage.googleapis.com/v1beta/models"
 LOCKED_PROMPT = "ตรวจสอบเบื้องต้นจากภาพฉลาก"
 
@@ -26,7 +31,6 @@ def _b64(file_bytes: bytes) -> str:
 
 
 def _extract_text_from_glm_response(data: Dict[str, Any]) -> str:
-    # พยายามดึงข้อความจาก response ของ Generative Language API
     try:
         parts = data.get("candidates", [])[0].get("content", {}).get("parts", [])
         texts = []
@@ -101,59 +105,40 @@ def _send_to_google_ai(model: str, api_key: str, api_base: str, payload: Dict[st
         data = resp.json() if resp.content else {}
     except Exception:
         data = {"raw": resp.text}
-    return {"status_code": resp.status_code, "data": data}
+    return {"status_code": resp.status_code, "data": data, "model": model}
 
 
 def _ensure_state():
     if "ocr_chat" not in st.session_state:
-        st.session_state["ocr_chat"] = []  # [{role: "user"|"assistant", text: str}]
+        st.session_state["ocr_chat"] = []
     if "ocr_image" not in st.session_state:
-        st.session_state["ocr_image"] = None  # (bytes, mime)
+        st.session_state["ocr_image"] = None
 
 
 def show():
     st.title("ตรวจสอบฉลากจากภาพด้วย AI")
-    st.info("กรุณากรอก API Key ในแถบด้านซ้ายให้เรียบร้อยก่อนใช้งานทุกครั้ง จากนั้นจึงอัปโหลดภาพฉลากเพื่อขอวิเคราะห์")
+    st.info("กรุณากรอก API Key ในแถบด้านซ้ายให้เรียบร้อยก่อนใช้งานทุกครั้ง")
 
     _ensure_state()
-    model = DEFAULT_MODEL
     api_base = DEFAULT_API_BASE
 
-    # Sidebar: การตั้งค่าเชื่อมต่อ
     with st.sidebar:
         st.markdown("**การเชื่อมต่อ Google AI Studio**")
-
-        # ช่องสำหรับใส่ Key (ผู้ใช้จะนำ Key มาใส่เอง)
-        # ใส่คีย์ที่นี่: GOOGLE_API_KEY จาก Google AI Studio
-        # ตัวอย่าง: st.secrets["GOOGLE_API_KEY"] ก็ได้เช่นกัน หากคุณตั้งค่าใน secrets
         api_key = st.text_input(
             "API Key (Google AI Studio)",
             value=os.environ.get("GOOGLE_API_KEY", ""),
             type="password",
-            help="ใส่คีย์จาก Google AI Studio หรือกำหนดเป็นตัวแปรแวดล้อม GOOGLE_API_KEY"
+            help="ใส่คีย์จาก Google AI Studio"
         )
-        # ถ้าระบบของคุณใช้ Authorization: Bearer <token>
-        # คุณอาจปรับส่วน _send_to_google_ai ให้เพิ่ม Header เองได้
+        
+        st.markdown("**ตั้งค่าโมเดล AI (ตัวเลือก)**")
+        # ให้ผู้ใช้สามารถเลือกโมเดลเองได้ หรือให้ระบบสุ่มหาอัตโนมัติ
+        user_selected_model = st.selectbox("เลือก Model (ปล่อย Auto เพื่อให้ระบบหาเอง)", ["Auto"] + FALLBACK_MODELS)
 
-        st.markdown(
-            """
-            **วิธีขอ API Key**
-
-            1. เข้าสู่ระบบ [Google AI Studio](https://aistudio.google.com/) ด้วยบัญชี Google ของคุณ
-            2. เปิดเมนู **API keys** (อยู่ในแถบด้านซ้ายของหน้าจอ)
-            3. กดปุ่ม **Create API key** แล้วเลือกโปรเจ็กต์ที่ต้องการ หากยังไม่มีให้สร้างใหม่ได้ทันที โดยสามารถตั้งชื่อโปรเจ็กต์ได้ตามต้องการ
-            4. เมื่อได้คีย์แล้ว กดคัดลอกและนำมาวางในช่องด้านบน หรือบันทึกเป็นตัวแปรแวดล้อมชื่อ `GOOGLE_API_KEY`
-
-            หากยังไม่เคยเปิดใช้งานการเรียก API มาก่อน ระบบอาจให้ยืนยันการใช้งานหรือสร้างโปรเจ็กต์ก่อน
-            """
-        )
-
-        st.divider()
         if st.button("ล้างประวัติแชต"):
             st.session_state["ocr_chat"] = []
             st.success("ล้างประวัติแล้ว")
 
-    # อัปโหลดภาพฉลาก (ผูกกับข้อความถัดไป)
     uploaded = st.file_uploader("อัปโหลดภาพฉลาก (JPEG/PNG)", type=["jpg", "jpeg", "png"])
     if uploaded is not None:
         img_bytes = uploaded.read()
@@ -161,15 +146,11 @@ def show():
         st.session_state["ocr_image"] = (img_bytes, mime)
         st.image(img_bytes, caption="ภาพฉลากที่อัปโหลด", use_container_width=True)
 
-    # แสดงประวัติการสนทนา
     for msg in st.session_state["ocr_chat"]:
         with st.chat_message(msg["role"]):
-            st.markdown(msg["text"])  # ข้อความอย่างเดียวสำหรับตอนนี้
+            st.markdown(msg["text"])
 
     send_disabled = st.session_state.get("ocr_image") is None
-    if send_disabled:
-        st.info("อัปโหลดภาพฉลากก่อน แล้วกดปุ่มเพื่อส่งคำขอวิเคราะห์")
-
     send_request = st.button("ส่งคำขอวิเคราะห์", use_container_width=True, disabled=send_disabled)
 
     if send_request:
@@ -178,12 +159,10 @@ def show():
         with st.chat_message("user"):
             st.markdown(user_prompt)
 
-        # เตรียม payload
         image_tuple = st.session_state.get("ocr_image")
         image_bytes, mime = (image_tuple if image_tuple else (None, None))
         payload = _build_glm_payload(user_prompt, image_bytes, mime)
 
-        # เรียก API
         if not api_key:
             assistant_text = "กรุณาใส่ API Key ในแถบด้านซ้ายก่อนที่จะส่งคำขอ"
             st.session_state["ocr_chat"].append({"role": "assistant", "text": assistant_text})
@@ -191,16 +170,32 @@ def show():
                 st.warning(assistant_text)
             return
 
-        try:
-            result = _send_to_google_ai(model=model, api_key=api_key, api_base=api_base, payload=payload)
-            status = result.get("status_code")
-            data = result.get("data", {})
-            if status == 200:
-                assistant_text = _extract_text_from_glm_response(data)
-            else:
-                assistant_text = f"เกิดข้อผิดพลาดจาก API (HTTP {status}):\n\n{json.dumps(data, ensure_ascii=False, indent=2)}"
-        except Exception as e:
-            assistant_text = f"ไม่สามารถเชื่อมต่อ API ได้: {e}"
+        with st.spinner("กำลังวิเคราะห์และหาโมเดลที่ใช้งานได้..."):
+            models_to_try = [user_selected_model] if user_selected_model != "Auto" else FALLBACK_MODELS
+            
+            success = False
+            last_error = ""
+            
+            for model_name in models_to_try:
+                try:
+                    result = _send_to_google_ai(model=model_name, api_key=api_key, api_base=api_base, payload=payload)
+                    status = result.get("status_code")
+                    data = result.get("data", {})
+                    
+                    if status == 200:
+                        success = True
+                        assistant_text = _extract_text_from_glm_response(data)
+                        assistant_text = f"*(วิเคราะห์ด้วย {model_name})*\n\n" + assistant_text
+                        break
+                    else:
+                        error_msg = json.dumps(data, ensure_ascii=False)
+                        last_error = f"API Error HTTP {status} from {model_name}:\n{error_msg}"
+                        # หากเป็น 404 Not Found หรือ 429 Quota Exceeded ให้ลองโมเดลถัดไป
+                except Exception as e:
+                    last_error = f"Exception with {model_name}: {e}"
+
+            if not success:
+                assistant_text = f"ไม่สามารถหาโมเดลที่ใช้งานได้เลย หรือเกิดข้อผิดพลาดทั้งหมด\n\nรายละเอียดข้อผิดพลาดล่าสุด:\n```\n{last_error}\n```"
 
         st.session_state["ocr_chat"].append({"role": "assistant", "text": assistant_text})
         with st.chat_message("assistant"):
