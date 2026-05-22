@@ -1,15 +1,1720 @@
-(async () => {
-  const compressedSource = "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";
+const STORAGE_KEY = "chalak-sure-interview-studio-v1";
+const API_BASE_URL = (window.INTERVIEW_API_BASE_URL || "").replace(/\/$/, "");
+
+const tags = [
+  "กฎหมาย",
+  "เวลา",
+  "ต้นทุน",
+  "ความรู้",
+  "การตรวจฉลาก",
+  "AI",
+  "มือถือ",
+  "ผู้เชี่ยวชาญ",
+  "ข้อกังวล",
+  "ข้อเสนอแนะ",
+];
+
+const guide = [
+  {
+    id: "q2-1",
+    section: "ส่วนที่ 2 สภาพปัญหาในการจัดทำฉลากอาหาร",
+    short: "กระบวนการจัดทำฉลาก",
+    title:
+      "โดยทั่วไปแล้ว กระบวนการจัดทำฉลากสินค้าของท่านเป็นอย่างไร? ท่านเริ่มต้นจากตรงไหน และมีขั้นตอนอะไรบ้าง?",
+    probes: [
+      "ใครเป็นคนรับผิดชอบหลักในการจัดทำฉลาก? ต้องประสานงานกับใครบ้าง?",
+      "ท่านรู้ได้อย่างไรว่าฉลากที่ทำออกมานั้น 'ถูกต้อง' แล้ว?",
+      "ปกติใช้เวลานานแค่ไหนกว่าจะได้ฉลากสำเร็จ 1 ฉบับ?",
+    ],
+  },
+  {
+    id: "q2-2",
+    section: "ส่วนที่ 2 สภาพปัญหาในการจัดทำฉลากอาหาร",
+    short: "ปัญหาที่เกิดขึ้นจริง",
+    title:
+      "ท่านเคยพบปัญหาหรืออุปสรรคอะไรบ้างในการจัดทำฉลาก ให้เล่าเป็นตัวอย่างที่เกิดขึ้นจริง?",
+    note:
+      "หากผู้ตอบเล่าปัญหาทั่ว ๆ ไป ให้กระตุ้นด้วย: มีเรื่องอะไรที่ท่านรู้สึกว่ายากที่สุดไหม?",
+    probes: [
+      "ปัญหานั้นเกิดขึ้นตอนไหน? ช่วงออกแบบ ช่วงรวบรวมข้อมูล หรือช่วงที่เจ้าหน้าที่ตรวจ?",
+      "ส่งผลกระทบกับธุรกิจอย่างไร? เช่น ต้องพิมพ์ใหม่ เสียเวลา ถูกปรับ",
+      "ตอนนั้นท่านแก้ปัญหาอย่างไร? ได้ผลไหม?",
+    ],
+  },
+  {
+    id: "q2-3",
+    section: "ส่วนที่ 2 สภาพปัญหาในการจัดทำฉลากอาหาร",
+    short: "ความซับซ้อนของกฎระเบียบ",
+    title:
+      "ท่านรู้สึกอย่างไรกับความซับซ้อนของกฎระเบียบฉลากอาหาร โดยเฉพาะประกาศฉบับ 450 และ 445 ที่มีผลใช้บังคับใหม่?",
+    probes: [
+      "ส่วนไหนของกฎหมายที่ท่านพบว่ายากหรือสับสนที่สุด? ขอตัวอย่างได้ไหม?",
+      "ท่านรู้ได้อย่างไรว่ากฎหมายเปลี่ยนแปลง? ต้องตามข่าวสารจากช่องทางไหน?",
+      "เมื่อกฎหมายเปลี่ยน ท่านต้องทำอะไรบ้างกับฉลากที่มีอยู่แล้ว?",
+    ],
+  },
+  {
+    id: "q2-4",
+    section: "ส่วนที่ 2 สภาพปัญหาในการจัดทำฉลากอาหาร",
+    short: "วิธีตรวจสอบก่อนพิมพ์",
+    title:
+      "ในการตรวจสอบฉลากของสินค้าใหม่ ท่านมีวิธีการตรวจสอบอย่างไรบ้าง ก่อนส่งพิมพ์จริง?",
+    note:
+      "จุดนี้สำคัญมาก: เปิดโอกาสให้ผู้ตอบพูดถึงช่องว่างในกระบวนการตรวจสอบที่แอปฯ จะเข้ามาอุด",
+    probes: [
+      "ท่านตรวจเองทั้งหมด หรือให้ใครช่วยตรวจ?",
+      "เคยพลาดจุดใดไปหรือไม่ แล้วรู้ตอนไหน? ก่อนพิมพ์ หลังพิมพ์ หรือหลังวางจำหน่าย",
+      "ถ้าไม่แน่ใจว่าฉลากถูกต้องไหม ท่านจะทำอย่างไร? ถามใคร?",
+    ],
+  },
+  {
+    id: "q3-1",
+    section: "ส่วนที่ 3 ความต้องการรูปแบบ/นวัตกรรมเพื่อสนับสนุนการจัดทำฉลาก",
+    short: "รูปแบบนวัตกรรมที่ต้องการ",
+    title:
+      "หากมีนวัตกรรมที่จะสามารถช่วยให้ท่านตรวจสอบและจัดทำฉลากได้ถูกต้องและง่ายมากขึ้น ท่านต้องการอยากให้นวัตกรรมดังกล่าวออกมาเป็นรูปแบบใด",
+    probes: [
+      "เช่น สื่อการสอนที่ช่วยให้เข้าใจการจัดทำฉลากมากขึ้น หรือโปรแกรมสำเร็จรูปที่ช่วยตรวจสอบและออกแบบฉลากได้",
+      "ท่านกังวลเรื่องความยากหรือง่ายในการใช้งานหรือไม่ อย่างไร?",
+      "ท่านอยากให้นวัตกรรมดังกล่าวเป็นแบบเอกสาร หรือเป็นโปรแกรมสำเร็จรูป?",
+    ],
+  },
+  {
+    id: "q3-2",
+    section: "ส่วนที่ 3 ความต้องการรูปแบบ/นวัตกรรมเพื่อสนับสนุนการจัดทำฉลาก",
+    short: "ฟังก์ชันที่ต้องการก่อน",
+    title:
+      "ถ้าท่านมีนวัตกรรมที่ช่วยตรวจสอบฉลากและจัดทำได้ ท่านอยากให้มันทำอะไรได้บ้างเป็นสิ่งแรก ๆ?",
+    probes: [
+      "ท่านอยากให้มันตรวจอะไร? แค่บอกว่าถูก/ผิด หรืออยากได้คำอธิบายด้วยว่าต้องแก้ตรงไหนอย่างไร?",
+      "ท่านจะใช้งานตอนไหน? ก่อนออกแบบ ระหว่างออกแบบ หรือหลังออกแบบเสร็จแล้ว?",
+      "ถ้ามีระบบ AI ที่อ่านฉลากจากภาพถ่ายแล้วแจ้งข้อผิดพลาดได้เลย ท่านคิดว่าจะเป็นประโยชน์ไหม? เพราะอะไร?",
+    ],
+  },
+  {
+    id: "q3-3",
+    section: "ส่วนที่ 3 ความต้องการรูปแบบ/นวัตกรรมเพื่อสนับสนุนการจัดทำฉลาก",
+    short: "ร่างข้อความบนฉลากอัตโนมัติ",
+    title:
+      "ถ้ามีนวัตกรรมที่ช่วยร่างข้อความบนฉลากให้อัตโนมัติ เพียงแค่ท่านกรอกข้อมูลสินค้า ท่านคิดว่าจะช่วยประหยัดเวลาหรือลดปัญหาได้มากน้อยแค่ไหน?",
+    probes: [
+      "ข้อมูลอะไรที่ท่านคิดว่ายากที่สุดในการกรอก? เช่น ส่วนประกอบ วัตถุเจือปน คำเตือน",
+      "ท่านอยากให้ระบบแนะนำ 'คำเตือนที่ต้องมี' ตามประเภทสินค้าของท่านได้เลยไหม?",
+      "ท่านอยากได้ฟังก์ชันตรวจสอบโภชนาการเพื่อรองรับการกล่าวอ้าง เช่น ไขมันต่ำ หรือไม่เติมน้ำตาล หรือไม่?",
+    ],
+  },
+  {
+    id: "q3-4",
+    section: "ส่วนที่ 3 ความต้องการรูปแบบ/นวัตกรรมเพื่อสนับสนุนการจัดทำฉลาก",
+    short: "อุปกรณ์และรูปแบบใช้งาน",
+    title:
+      "ในเชิงปฏิบัติจริง ถ้ามีนวัตกรรมที่ช่วยตรวจสอบฉลาก ท่านจะใช้งานผ่านอุปกรณ์อะไร?",
+    probes: [
+      "ท่านสะดวกใช้บนโทรศัพท์มือถือ แท็บเล็ต หรือคอมพิวเตอร์มากกว่ากัน?",
+      "ท่านอยากใช้แบบออนไลน์ตลอดเวลา หรือต้องการให้ใช้แบบออฟไลน์ได้ด้วย?",
+      "ความเร็วในการตอบสนองของระบบสำคัญแค่ไหน? ท่านรอได้นานสูงสุดกี่วินาที?",
+    ],
+  },
+  {
+    id: "q3-5",
+    section: "ส่วนที่ 3 ความต้องการรูปแบบ/นวัตกรรมเพื่อสนับสนุนการจัดทำฉลาก",
+    short: "AI ถ่ายรูปฉลากและอ้างอิงกฎหมาย",
+    title:
+      "ถ้ามีระบบ AI ที่สามารถถ่ายรูปฉลากแล้วบอกข้อผิดพลาดได้ทันที รวมถึงระบุว่าต้องแก้ไขอะไร และอ้างอิงข้อกฎหมายด้วย ท่านคิดว่าระบบนี้จะเปลี่ยนวิธีทำงานของท่านได้ไหม อย่างไร?",
+    probes: [
+      "ท่านมั่นใจในความถูกต้องของ AI มากน้อยแค่ไหน? มีเงื่อนไขอะไรที่ทำให้ท่านมั่นใจมากขึ้น?",
+      "ท่านยังต้องการให้มีผู้เชี่ยวชาญมนุษย์ยืนยันผลอีกครั้งไหม หรือเชื่อ AI ได้เลย?",
+      "ถ้าระบบแจ้งว่าฉลากของท่านมีปัญหา ท่านต้องการคำอธิบายเพิ่มเติมหรือวิธีแก้ไขด้วยไหม?",
+    ],
+  },
+  {
+    id: "q3-6",
+    section: "ส่วนที่ 3 ความต้องการรูปแบบ/นวัตกรรมเพื่อสนับสนุนการจัดทำฉลาก",
+    short: "สิ่งที่ควรช่วยมากที่สุด",
+    title:
+      "ในบรรดาปัญหาและความต้องการทั้งหมดที่ท่านเล่ามา สิ่งใดที่ท่านอยากให้นวัตกรรมหรือแอปพลิเคชันช่วยแก้ไขได้มากที่สุดเป็นอันดับ 1?",
+    probes: [
+      "ถ้าแอปฯ ทำสิ่งนั้นได้สำเร็จ ชีวิตการทำงานของท่านจะเปลี่ยนแปลงไปอย่างไร?",
+      "มีอะไรที่ท่านคิดว่าแอปฯ ไม่ควรทำ หรือไม่ต้องการให้มีฟังก์ชันนั้นเลย?",
+      "ท่านมีข้อเสนอแนะอื่น ๆ ที่อยากให้ผู้พัฒนาทราบหรือไม่?",
+    ],
+  },
+];
+
+const coverageGuide = {
+  "q2-1": [
+    {
+      id: "process",
+      label: "ขั้นตอนการทำฉลาก",
+      keywords: ["เริ่ม", "รวบรวม", "ออกแบบ", "ส่ง", "ตรวจ", "พิมพ์", "ขั้นตอน", "กระบวนการ"],
+      followup:
+        "ช่วยเล่าขั้นตอนตั้งแต่เริ่มทำฉลากจนพร้อมพิมพ์จริงแบบคร่าว ๆ ได้ไหมครับ/คะ ว่าปกติผ่านขั้นไหนบ้าง?",
+    },
+    {
+      id: "people",
+      label: "ผู้เกี่ยวข้อง",
+      keywords: ["เจ้าของ", "กราฟิก", "ร้าน", "oem", "โรงงาน", "เจ้าหน้าที่", "คน", "ประสาน", "รับผิดชอบ"],
+      followup:
+        "ในกระบวนการนั้นมีใครบ้างที่เกี่ยวข้อง และแต่ละคนช่วยตัดสินใจหรือตรวจอะไรเป็นหลักครับ/คะ?",
+    },
+    {
+      id: "confidence",
+      label: "วิธีมั่นใจว่าถูกต้อง",
+      keywords: ["ถูกต้อง", "กฎหมาย", "ประกาศ", "ตรวจ", "เช็ก", "มั่นใจ", "อย.", "เอกสาร"],
+      followup:
+        "ตอนที่ตัดสินใจว่าฉลากนี้ถูกต้องแล้ว ท่านใช้อะไรเป็นหลักในการเช็กหรือสร้างความมั่นใจครับ/คะ?",
+    },
+    {
+      id: "time",
+      label: "เวลา/ความล่าช้า",
+      keywords: ["เวลา", "วัน", "ชั่วโมง", "นาน", "ล่าช้า", "รอ"],
+      followup:
+        "โดยเฉลี่ยฉลากหนึ่งชิ้นใช้เวลาประมาณเท่าไร และช่วงไหนที่มักทำให้เสียเวลามากที่สุดครับ/คะ?",
+    },
+  ],
+  "q2-2": [
+    {
+      id: "incident",
+      label: "ตัวอย่างปัญหาจริง",
+      keywords: ["เคย", "ตัวอย่าง", "ครั้ง", "กรณี", "ปัญหา", "ผิด", "พลาด"],
+      followup:
+        "ขอเป็นเหตุการณ์จริงสักหนึ่งกรณีได้ไหมครับ/คะ ว่าตอนนั้นเกิดปัญหาอะไรขึ้น?",
+    },
+    {
+      id: "stage",
+      label: "ช่วงที่เกิดปัญหา",
+      keywords: ["ออกแบบ", "รวบรวม", "ตรวจ", "พิมพ์", "วางขาย", "ก่อน", "หลัง"],
+      followup:
+        "ปัญหานั้นมักเกิดช่วงไหนของงานฉลาก เช่น ตอนรวบรวมข้อมูล ออกแบบ ตรวจ หรือหลังพิมพ์ครับ/คะ?",
+    },
+    {
+      id: "impact",
+      label: "ผลกระทบ",
+      keywords: ["เสีย", "พิมพ์ใหม่", "ต้นทุน", "เงิน", "เวลา", "ปรับ", "ล่าช้า", "กระทบ"],
+      followup:
+        "ปัญหานั้นส่งผลต่อธุรกิจอย่างไรบ้าง เช่น เวลา ต้นทุน การขาย หรือความมั่นใจครับ/คะ?",
+    },
+    {
+      id: "solution",
+      label: "วิธีแก้ปัญหา",
+      keywords: ["แก้", "ปรึกษา", "ถาม", "ปรับ", "เปลี่ยน", "ทำใหม่"],
+      followup:
+        "ตอนนั้นท่านแก้ปัญหาอย่างไร และวิธีนั้นช่วยได้มากน้อยแค่ไหนครับ/คะ?",
+    },
+  ],
+  "q2-3": [
+    {
+      id: "difficult-law",
+      label: "จุดที่สับสน",
+      keywords: ["สับสน", "ยาก", "ไม่เข้าใจ", "ประกาศ", "450", "445", "กฎหมาย"],
+      followup:
+        "ส่วนไหนของกฎระเบียบที่ทำให้สับสนหรือไม่แน่ใจมากที่สุดครับ/คะ?",
+    },
+    {
+      id: "source",
+      label: "ช่องทางติดตามกฎหมาย",
+      keywords: ["ข่าว", "ช่องทาง", "ไลน์", "เว็บ", "อบรม", "เจ้าหน้าที่", "อย.", "ติดตาม"],
+      followup:
+        "ปกติท่านรู้ข่าวว่ากฎหมายหรือประกาศเปลี่ยนจากช่องทางไหนครับ/คะ?",
+    },
+    {
+      id: "change-action",
+      label: "สิ่งที่ต้องทำเมื่อกฎหมายเปลี่ยน",
+      keywords: ["แก้", "เปลี่ยน", "ฉลากเดิม", "พิมพ์ใหม่", "ปรับ", "ทำใหม่"],
+      followup:
+        "เมื่อกฎหมายเปลี่ยน ท่านต้องจัดการกับฉลากเดิมอย่างไรบ้างครับ/คะ?",
+    },
+  ],
+  "q2-4": [
+    {
+      id: "check-method",
+      label: "วิธีตรวจปัจจุบัน",
+      keywords: ["ตรวจ", "เช็ก", "checklist", "เอกสาร", "เทียบ", "ดูเอง"],
+      followup:
+        "ก่อนส่งพิมพ์จริง ท่านตรวจฉลากด้วยวิธีไหนหรือใช้เอกสารอะไรช่วยครับ/คะ?",
+    },
+    {
+      id: "checker",
+      label: "คนช่วยตรวจ",
+      keywords: ["เอง", "เจ้าหน้าที่", "ผู้เชี่ยวชาญ", "กราฟิก", "โรงงาน", "ถาม", "ช่วย"],
+      followup:
+        "ปกติท่านตรวจเองทั้งหมด หรือมีใครช่วยตรวจ/ให้คำปรึกษาก่อนพิมพ์ครับ/คะ?",
+    },
+    {
+      id: "missed",
+      label: "จุดที่เคยพลาด",
+      keywords: ["พลาด", "ผิด", "แก้", "หลังพิมพ์", "วางขาย", "ไม่แน่ใจ"],
+      followup:
+        "เคยมีจุดที่ตรวจไม่เจอจนต้องแก้ภายหลังไหมครับ/คะ ถ้ามี จุดนั้นคืออะไร?",
+    },
+  ],
+  "q3-1": [
+    {
+      id: "format",
+      label: "รูปแบบนวัตกรรม",
+      keywords: ["เอกสาร", "แอป", "โปรแกรม", "เว็บ", "มือถือ", "สื่อ", "วิดีโอ", "คู่มือ"],
+      followup:
+        "ถ้าให้เลือกจริง ๆ ท่านอยากให้นวัตกรรมนี้อยู่ในรูปแบบไหนมากที่สุด เช่น แอป เว็บ คู่มือ หรือสื่อสอนครับ/คะ?",
+    },
+    {
+      id: "ease",
+      label: "ความง่ายในการใช้",
+      keywords: ["ง่าย", "ยาก", "ไม่ถนัด", "ใช้ไม่เป็น", "สะดวก", "ซับซ้อน"],
+      followup:
+        "อะไรจะทำให้เครื่องมือนี้ใช้ง่ายสำหรับท่าน และอะไรที่กลัวว่าจะทำให้ใช้ยากครับ/คะ?",
+    },
+    {
+      id: "support",
+      label: "สิ่งสนับสนุนที่ต้องการ",
+      keywords: ["สอน", "ตัวอย่าง", "คำแนะนำ", "อธิบาย", "เจ้าหน้าที่", "คู่มือ"],
+      followup:
+        "นอกจากตัวระบบแล้ว ท่านอยากได้คำแนะนำ ตัวอย่าง หรือการช่วยเหลือแบบใดเพิ่มไหมครับ/คะ?",
+    },
+  ],
+  "q3-2": [
+    {
+      id: "first-feature",
+      label: "ฟังก์ชันแรกที่อยากได้",
+      keywords: ["ตรวจ", "บอก", "แจ้ง", "ออกแบบ", "ร่าง", "ฟังก์ชัน", "อันดับแรก"],
+      followup:
+        "ถ้าระบบทำได้เพียงหนึ่งอย่างก่อน ท่านอยากให้ช่วยเรื่องใดมากที่สุดครับ/คะ?",
+    },
+    {
+      id: "explanation",
+      label: "ระดับคำอธิบายที่ต้องการ",
+      keywords: ["อธิบาย", "แก้", "ทำอย่างไร", "ถูก", "ผิด", "เหตุผล", "กฎหมาย"],
+      followup:
+        "เวลาระบบเจอปัญหา ท่านอยากให้บอกแค่ถูก/ผิด หรืออยากได้เหตุผลและวิธีแก้ด้วยครับ/คะ?",
+    },
+    {
+      id: "timing",
+      label: "ช่วงเวลาที่ใช้",
+      keywords: ["ก่อน", "ระหว่าง", "หลัง", "ออกแบบ", "พิมพ์", "ส่ง"],
+      followup:
+        "ท่านคิดว่าจะใช้ระบบนี้ช่วงไหนของงานฉลากมากที่สุดครับ/คะ?",
+    },
+  ],
+  "q3-3": [
+    {
+      id: "time-saving",
+      label: "ลดเวลา/ลดปัญหา",
+      keywords: ["ประหยัด", "ลด", "เร็ว", "เวลา", "ปัญหา", "ช่วย"],
+      followup:
+        "ถ้าระบบช่วยร่างข้อความบนฉลากให้ ท่านคิดว่าจะลดเวลา หรือลดความผิดพลาดตรงไหนได้มากที่สุดครับ/คะ?",
+    },
+    {
+      id: "hard-fields",
+      label: "ข้อมูลที่กรอกยาก",
+      keywords: ["ส่วนประกอบ", "วัตถุเจือปน", "คำเตือน", "โภชนาการ", "กรอก", "ยาก"],
+      followup:
+        "ข้อมูลส่วนไหนที่ท่านรู้สึกว่ากรอกหรือเขียนบนฉลากยากที่สุดครับ/คะ?",
+    },
+    {
+      id: "claim-warning",
+      label: "คำเตือน/โภชนาการ/กล่าวอ้าง",
+      keywords: ["คำเตือน", "ถั่ว", "แพ้", "โภชนาการ", "ไขมันต่ำ", "น้ำตาล", "กล่าวอ้าง"],
+      followup:
+        "อยากให้ระบบช่วยแนะนำคำเตือน โภชนาการ หรือข้อความกล่าวอ้างแบบไหนเป็นพิเศษไหมครับ/คะ?",
+    },
+  ],
+  "q3-4": [
+    {
+      id: "device",
+      label: "อุปกรณ์ที่สะดวก",
+      keywords: ["มือถือ", "โทรศัพท์", "แท็บเล็ต", "คอม", "คอมพิวเตอร์", "โน้ตบุ๊ก"],
+      followup:
+        "ท่านสะดวกใช้เครื่องมือนี้ผ่านอุปกรณ์ใดมากที่สุด และเพราะอะไรครับ/คะ?",
+    },
+    {
+      id: "online",
+      label: "ออนไลน์/ออฟไลน์",
+      keywords: ["ออนไลน์", "ออฟไลน์", "อินเทอร์เน็ต", "เน็ต", "สัญญาณ"],
+      followup:
+        "การใช้งานออนไลน์ตลอดเวลามีปัญหาสำหรับท่านไหม หรือควรใช้บางส่วนแบบออฟไลน์ได้ครับ/คะ?",
+    },
+    {
+      id: "speed",
+      label: "ความเร็วที่ยอมรับได้",
+      keywords: ["เร็ว", "ช้า", "รอ", "วินาที", "นาที", "ตอบสนอง"],
+      followup:
+        "ถ้าระบบต้องประมวลผล ท่านรอผลได้นานประมาณเท่าไรจึงจะยังรู้สึกว่าใช้งานได้ครับ/คะ?",
+    },
+  ],
+  "q3-5": [
+    {
+      id: "workflow-change",
+      label: "ผลต่อวิธีทำงาน",
+      keywords: ["เปลี่ยน", "ทำงาน", "เร็ว", "ลด", "ช่วย", "ตรวจ"],
+      followup:
+        "ถ้าถ่ายรูปฉลากแล้วระบบแจ้งข้อผิดพลาดได้ทันที วิธีทำงานของท่านจะเปลี่ยนไปอย่างไรครับ/คะ?",
+    },
+    {
+      id: "trust",
+      label: "ความเชื่อมั่นต่อ AI",
+      keywords: ["มั่นใจ", "เชื่อ", "ถูกต้อง", "กังวล", "ผิดพลาด", "ไว้ใจ"],
+      followup:
+        "อะไรจะทำให้ท่านมั่นใจผลจาก AI มากขึ้นครับ/คะ?",
+    },
+    {
+      id: "human-confirm",
+      label: "ต้องการผู้เชี่ยวชาญยืนยัน",
+      keywords: ["เจ้าหน้าที่", "ผู้เชี่ยวชาญ", "ยืนยัน", "มนุษย์", "ตรวจซ้ำ", "อย."],
+      followup:
+        "ท่านยังอยากให้มีเจ้าหน้าที่หรือผู้เชี่ยวชาญยืนยันผลอีกครั้งไหมครับ/คะ?",
+    },
+  ],
+  "q3-6": [
+    {
+      id: "top-priority",
+      label: "สิ่งที่อยากให้แก้อันดับ 1",
+      keywords: ["อันดับ", "สำคัญ", "ที่สุด", "อยาก", "ต้องการ", "แก้"],
+      followup:
+        "จากทั้งหมด ถ้าเลือกได้ข้อเดียว ท่านอยากให้แอปช่วยแก้ปัญหาอะไรมากที่สุดครับ/คะ?",
+    },
+    {
+      id: "work-life-change",
+      label: "ผลถ้าทำสำเร็จ",
+      keywords: ["เปลี่ยน", "ช่วย", "ลด", "เร็ว", "มั่นใจ", "ทำงาน"],
+      followup:
+        "ถ้าแอปทำเรื่องนั้นได้จริง งานของท่านจะดีขึ้นหรือเปลี่ยนไปอย่างไรครับ/คะ?",
+    },
+    {
+      id: "avoid",
+      label: "สิ่งที่ไม่ควรทำ",
+      keywords: ["ไม่ควร", "ไม่อยาก", "ไม่ต้องการ", "กังวล", "ข้อเสนอ", "เพิ่ม"],
+      followup:
+        "มีอะไรที่ท่านคิดว่าแอปไม่ควรทำ หรือมีข้อเสนอแนะที่อยากฝากให้ผู้พัฒนาระวังไหมครับ/คะ?",
+    },
+  ],
+};
+
+const blankState = {
+  view: "manual",
+  currentId: "q2-1",
+  respondent: {
+    code: "",
+    license: "",
+    duration: "",
+    foodType: "",
+    productCount: "",
+    role: "",
+    businessType: "",
+    methods: [],
+    methodOther: "",
+  },
+  consent: {
+    informed: false,
+    audio: false,
+    privacy: false,
+  },
+  interviewer: "นายชญานิน ศรีชมภู",
+  timer: {
+    running: false,
+    startedAt: null,
+    elapsedMs: 0,
+  },
+  answers: {},
+  ai: {
+    currentId: "q2-1",
+    started: false,
+    completed: false,
+    messages: [],
+    isTyping: false,
+  },
+  isExtracting: false,
+  helperText: "",
+  updatedAt: null,
+};
+
+let state = loadState();
+let toastTimer = null;
+
+function icon(name) {
+  const icons = {
+    check:
+      '<path d="M20 6 9 17l-5-5"></path>',
+    clock:
+      '<circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2"></path>',
+    download:
+      '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="M7 10l5 5 5-5"></path><path d="M12 15V3"></path>',
+    file:
+      '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6"></path><path d="M16 13H8"></path><path d="M16 17H8"></path>',
+    mic:
+      '<path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><path d="M12 19v3"></path>',
+    pause:
+      '<path d="M10 4H6v16h4V4Z"></path><path d="M18 4h-4v16h4V4Z"></path>',
+    play:
+      '<path d="m5 3 14 9-14 9V3Z"></path>',
+    save:
+      '<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"></path><path d="M17 21v-8H7v8"></path><path d="M7 3v5h8"></path>',
+    spark:
+      '<path d="M12 3l1.7 4.8L18 10l-4.3 2.2L12 17l-1.7-4.8L6 10l4.3-2.2L12 3Z"></path><path d="M19 3v4"></path><path d="M21 5h-4"></path><path d="M5 17v4"></path><path d="M7 19H3"></path>',
+    message:
+      '<path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4Z"></path>',
+    send:
+      '<path d="m22 2-7 20-4-9-9-4Z"></path><path d="M22 2 11 13"></path>',
+    trash:
+      '<path d="M3 6h18"></path><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>',
+    user:
+      '<path d="M20 21a8 8 0 0 0-16 0"></path><circle cx="12" cy="7" r="4"></circle>',
+    arrowLeft:
+      '<path d="M19 12H5"></path><path d="m12 19-7-7 7-7"></path>',
+    arrowRight:
+      '<path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path>',
+  };
+  return `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true">${icons[name] || icons.file}</svg>`;
+}
+
+function loadState() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+    return normalizeState(saved || blankState);
+  } catch {
+    return normalizeState(blankState);
+  }
+}
+
+function normalizeState(source) {
+  const next = structuredClone(blankState);
+  Object.assign(next, source || {});
+  next.view = ["manual", "ai"].includes(source?.view) ? source.view : "manual";
+  next.respondent = { ...blankState.respondent, ...(source?.respondent || {}) };
+  next.consent = { ...blankState.consent, ...(source?.consent || {}) };
+  next.timer = { ...blankState.timer, ...(source?.timer || {}) };
+  next.ai = { ...blankState.ai, ...(source?.ai || {}) };
+  next.answers = source?.answers || {};
+
+  guide.forEach((question) => {
+    next.answers[question.id] = {
+      answer: "",
+      summary: "",
+      probes: [],
+      tags: [],
+      coverage: [],
+      aiFollowups: [],
+      ...(next.answers[question.id] || {}),
+    };
+  });
+
+  if (!guide.some((question) => question.id === next.currentId)) {
+    next.currentId = guide[0].id;
+  }
+  if (!guide.some((question) => question.id === next.ai.currentId)) {
+    next.ai.currentId = guide[0].id;
+  }
+  if (!Array.isArray(next.ai.messages)) next.ai.messages = [];
+
+  return next;
+}
+
+function saveState(show = false) {
+  state.updatedAt = new Date().toISOString();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  if (show) showToast("บันทึกฉบับร่างไว้ในเครื่องนี้แล้ว");
+}
+
+function currentQuestion() {
+  return guide.find((question) => question.id === state.currentId) || guide[0];
+}
+
+function currentIndex() {
+  return guide.findIndex((question) => question.id === state.currentId);
+}
+
+function answerFor(id) {
+  return state.answers[id];
+}
+
+function isComplete(id) {
+  const answer = answerFor(id);
+  return Boolean(answer.answer.trim() || answer.summary.trim());
+}
+
+function progress() {
+  const done = guide.filter((question) => isComplete(question.id)).length;
+  return {
+    done,
+    total: guide.length,
+    percent: Math.round((done / guide.length) * 100),
+  };
+}
+
+function elapsedMs() {
+  const extra =
+    state.timer.running && state.timer.startedAt
+      ? Date.now() - state.timer.startedAt
+      : 0;
+  return state.timer.elapsedMs + extra;
+}
+
+function formatDuration(ms) {
+  const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+  const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, "0");
+  const seconds = String(totalSeconds % 60).padStart(2, "0");
+  return `${minutes}:${seconds}`;
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function render() {
+  const question = currentQuestion();
+  const answer = answerFor(question.id);
+  const stats = progress();
+  const app = document.querySelector("#app");
+  const mainView =
+    state.view === "ai" ? renderAIInterview(stats) : renderQuestion(question, answer);
+
+  app.innerHTML = `
+    <div class="app-shell">
+      ${renderTopbar(stats)}
+      <main class="layout ${state.view === "ai" ? "ai-layout" : ""}">
+        ${renderSidebar(stats)}
+        ${mainView}
+        ${renderInspector(stats)}
+      </main>
+      <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    </div>
+    ${state.isExtracting ? `
+      <div class="loading-overlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-title">กำลังดึงข้อมูลด้วย AI...</div>
+        <div class="loading-subtitle">กรุณารอประมาณ 10-15 วินาที ระบบกำลังวิเคราะห์บทสนทนาและกรอกข้อมูลฟอร์มอัตโนมัติ</div>
+      </div>
+    ` : ""}
+  `;
+
+  refreshTimer();
+  syncChatViewport();
+}
+
+function renderTopbar(stats) {
+  const timerAction = state.timer.running ? "pause-timer" : "start-timer";
+  const timerLabel = state.timer.running ? "หยุดชั่วคราว" : "เริ่มสัมภาษณ์";
+
+  return `
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">${icon("mic")}</div>
+        <div>
+          <h1 class="brand-title">ฉลากชัวร์ Interview Studio</h1>
+          <p class="brand-subtitle">แบบสัมภาษณ์เชิงลึก: สภาพปัญหาการจัดทำฉลากอาหารและความต้องการนวัตกรรม</p>
+        </div>
+      </div>
+      <div class="top-actions">
+        <div class="mode-switch" role="tablist" aria-label="โหมดสัมภาษณ์">
+          <button class="mode-tab ${state.view === "manual" ? "active" : ""}" data-action="set-view" data-view="manual">ผู้สัมภาษณ์กรอกเอง</button>
+          <button class="mode-tab ${state.view === "ai" ? "active" : ""}" data-action="set-view" data-view="ai">AI สัมภาษณ์ผ่านแชท</button>
+        </div>
+        <span class="status-chip ${stats.done ? "good" : ""}">${stats.done}/${stats.total} คำถาม</span>
+        <button class="button accent" data-action="${timerAction}">${icon(state.timer.running ? "pause" : "play")}<span>${timerLabel}</span></button>
+        <button class="button soft" data-action="save">${icon("save")}<span>บันทึกฉบับร่าง</span></button>
+        <button class="button primary" data-action="submit">${icon("send")}<span>ส่งข้อมูล</span></button>
+      </div>
+    </header>
+  `;
+}
+
+function renderSidebar(stats) {
+  const angle = `${stats.percent * 3.6}deg`;
+  const sectionTwo = guide.filter((question) => question.id.startsWith("q2"));
+  const sectionThree = guide.filter((question) => question.id.startsWith("q3"));
+
+  return `
+    <aside class="sidebar">
+      <section class="panel progress-panel">
+        <div class="progress-row">
+          <div>
+            <p class="tiny-label">ความคืบหน้า</p>
+            <p class="progress-title">บันทึกแล้ว ${stats.done} จาก ${stats.total} คำถาม</p>
+          </div>
+          <div class="progress-number" style="--progress-angle: ${angle}">${stats.percent}%</div>
+        </div>
+      </section>
+      <nav class="panel nav-list" aria-label="รายการคำถามสัมภาษณ์">
+        ${renderNavSection("ส่วนที่ 2", sectionTwo)}
+        ${renderNavSection("ส่วนที่ 3", sectionThree)}
+      </nav>
+    </aside>
+  `;
+}
+
+function renderNavSection(title, items) {
+  return `
+    <p class="nav-section-title">${title}</p>
+    ${items
+      .map((question) => {
+        const index = guide.findIndex((item) => item.id === question.id) + 1;
+        const active = question.id === state.currentId ? "active" : "";
+        const done = isComplete(question.id) ? "done" : "";
+        return `
+          <button class="nav-item ${active}" data-action="go" data-id="${question.id}">
+            <span class="nav-index">${question.id.replace("q", "").replace("-", ".")}</span>
+            <span class="nav-main">
+              <span class="nav-title">${escapeHtml(question.short)}</span>
+              <span class="nav-caption">คำถามที่ ${index}</span>
+            </span>
+            <span class="check-dot ${done}"></span>
+          </button>
+        `;
+      })
+      .join("")}
+  `;
+}
+
+function renderQuestion(question, answer) {
+  const index = currentIndex();
+  const statusClass = isComplete(question.id) ? "good" : "warn";
+  const statusText = isComplete(question.id) ? "มีบันทึกแล้ว" : "รอบันทึกคำตอบ";
+  const probeCount = answer.probes.length;
+  const helper = state.helperText || buildSuggestion(question, answer);
+
+  return `
+    <section class="workspace">
+      <article class="panel question-panel">
+        <div class="question-head">
+          <div>
+            <p class="section-kicker">${escapeHtml(question.section)}</p>
+            <h2 class="question-title">คำถามหลัก ${question.id.replace("q", "").replace("-", ".")}</h2>
+          </div>
+          <div class="question-meta">
+            <span class="status-chip ${statusClass}">${statusText}</span>
+            <span class="status-chip">${probeCount}/${question.probes.length} probe</span>
+          </div>
+        </div>
+        <div class="question-body">
+          <div class="field-stack">
+            <div class="field">
+              <span class="field-label">คำถามหลัก</span>
+              <div class="assistant-box">
+                <p class="assistant-prompt">${escapeHtml(question.title)}</p>
+                <button class="button soft" data-action="suggest">${icon("spark")}<span>ช่วยเลือกคำถามถามต่อ</span></button>
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="answer">บันทึกคำตอบ</label>
+              <textarea id="answer" class="textarea" data-answer="${question.id}" placeholder="จดคำตอบแบบเล่าเรื่อง เหตุการณ์จริง คำพูดสำคัญ หรือบริบทที่สังเกตได้">${escapeHtml(answer.answer)}</textarea>
+            </div>
+
+            <div class="field">
+              <label for="summary">สรุปประเด็นสำคัญ</label>
+              <textarea id="summary" class="textarea summary" data-summary="${question.id}" placeholder="สรุปเป็น bullet/ประเด็นสำหรับวิเคราะห์ภายหลัง">${escapeHtml(answer.summary)}</textarea>
+            </div>
+
+            <div class="field">
+              <span class="field-label">แท็กประเด็น</span>
+              <div class="tag-row">
+                ${tags
+                  .map(
+                    (tag) => `
+                      <button class="tag ${answer.tags.includes(tag) ? "active" : ""}" data-action="tag" data-id="${question.id}" data-tag="${tag}">
+                        ${escapeHtml(tag)}
+                      </button>
+                    `,
+                  )
+                  .join("")}
+              </div>
+            </div>
+          </div>
+
+          <aside class="probe-box">
+            <div>
+              <p class="tiny-label">คำถามเพื่อเจาะลึก</p>
+              <p class="empty-text">ติ๊กเมื่อถามแล้ว เพื่อเห็นช่องว่างระหว่างสัมภาษณ์</p>
+            </div>
+            <div class="probe-list">
+              ${question.probes
+                .map(
+                  (probe, probeIndex) => `
+                    <label class="probe-item">
+                      <input type="checkbox" data-probe="${question.id}" data-probe-index="${probeIndex}" ${answer.probes.includes(probeIndex) ? "checked" : ""} />
+                      <span>${escapeHtml(probe)}</span>
+                    </label>
+                  `,
+                )
+                .join("")}
+            </div>
+            ${question.note ? `<div class="note-callout">${escapeHtml(question.note)}</div>` : ""}
+            <div class="assistant-box">
+              <p class="tiny-label">คำถามถัดไปที่น่าถาม</p>
+              <p class="assistant-prompt">${escapeHtml(helper)}</p>
+            </div>
+          </aside>
+        </div>
+        <footer class="question-footer">
+          <button class="button" data-action="prev" ${index === 0 ? "disabled" : ""}>${icon("arrowLeft")}<span>คำถามก่อนหน้า</span></button>
+          <div class="toolbar-group">
+            <button class="button warning" data-action="clear-current">${icon("trash")}<span>ล้างคำตอบข้อนี้</span></button>
+            <button class="button primary" data-action="next" ${index === guide.length - 1 ? "disabled" : ""}><span>คำถามถัดไป</span>${icon("arrowRight")}</button>
+          </div>
+        </footer>
+      </article>
+    </section>
+  `;
+}
+
+function renderAIInterview(stats) {
+  const question = aiCurrentQuestion();
+  const answer = answerFor(question.id);
+  const index = aiCurrentIndex() + 1;
+  const coverage = coverageFor(question.id, answer);
+
+  return `
+    <section class="workspace ai-workspace">
+      <article class="panel chat-panel">
+        <div class="question-head">
+          <div>
+            <p class="section-kicker">${escapeHtml(question.section)}</p>
+            <h2 class="question-title">AI สัมภาษณ์ผ่านแชท</h2>
+          </div>
+          <div class="question-meta">
+            <span class="status-chip ${state.ai.started ? "good" : "warn"}">${state.ai.started ? "กำลังสัมภาษณ์" : "พร้อมเริ่ม"}</span>
+            <span class="status-chip">ข้อ ${index}/${guide.length}</span>
+            <span class="status-chip">${coverage.covered.length}/${coverage.plan.length} ประเด็น</span>
+          </div>
+        </div>
+
+        <div class="ai-current-card">
+          <div>
+            <p class="tiny-label">คำถามหลักที่ AI กำลังเก็บข้อมูล</p>
+            <h3>${question.id.replace("q", "").replace("-", ".")} ${escapeHtml(question.short)}</h3>
+            <p>${escapeHtml(question.title)}</p>
+          </div>
+          <button class="button soft" data-action="ask-ai-probe">${icon("spark")}<span>ถามต่อจากคำตอบ</span></button>
+        </div>
+
+        <div class="chat-log" data-chat-log aria-live="polite">
+          ${renderChatMessages()}
+        </div>
+
+        <div class="chat-compose">
+          <textarea class="chat-input" data-chat-input placeholder="พิมพ์คำตอบของผู้ให้สัมภาษณ์ หรือถอดคำพูดจากการสนทนา..."></textarea>
+          <div class="chat-actions">
+            <div class="toolbar-group">
+              <button class="button accent" data-action="start-ai">${icon("message")}<span>${state.ai.started ? "เริ่มช่วงใหม่" : "เริ่ม AI สัมภาษณ์"}</span></button>
+              <button class="button soft" data-action="ai-next">${icon("arrowRight")}<span>ไปคำถามถัดไป</span></button>
+              <button class="button warning" data-action="finish-ai">${icon("check")}<span>จบสัมภาษณ์</span></button>
+              <button class="button soft" data-action="extract-ai">${icon("spark")}<span>ดึงข้อมูล AI</span></button>
+            </div>
+            <button class="button primary" data-action="send-chat">${icon("send")}<span>ส่งคำตอบ</span></button>
+          </div>
+        </div>
+      </article>
+
+      <section class="panel ai-data-panel">
+        <div class="side-heading">
+          <h3>ข้อมูลที่เก็บจากแชท</h3>
+          <span class="status-chip">${stats.percent}%</span>
+        </div>
+        <div class="summary-list">
+          ${renderRecentSummaries()}
+        </div>
+      </section>
+    </section>
+  `;
+}
+
+function renderChatMessages() {
+  if (!state.ai.messages.length && !state.ai.isTyping) {
+    return `
+      <div class="chat-empty">
+        <div class="brand-mark">${icon("message")}</div>
+        <h3>พร้อมให้ AI เป็นผู้สัมภาษณ์</h3>
+        <p>กดเริ่ม แล้ว AI จะใช้คำถามหลักเป็นเป้าหมาย ถามต่อจากคำตอบจริง และใช้คำถามเจาะลึกเดิมเป็นเพียงแนวทาง</p>
+      </div>
+    `;
+  }
+
+  let html = state.ai.messages
+    .map((message) => {
+      const question = guide.find((item) => item.id === message.questionId);
+      const label = message.role === "assistant" ? "AI ผู้สัมภาษณ์" : "ผู้ให้สัมภาษณ์";
+      return `
+        <article class="chat-message ${message.role}">
+          <div class="chat-avatar">${message.role === "assistant" ? icon("spark") : icon("user")}</div>
+          <div class="chat-bubble">
+            <div class="chat-meta">
+              <strong>${label}</strong>
+              <span>${question ? question.id.replace("q", "").replace("-", ".") : ""}</span>
+            </div>
+            <p>${escapeHtml(message.text)}</p>
+          </div>
+        </article>
+      `;
+    })
+    .join("");
+
+  if (state.ai.isTyping) {
+    html += `
+      <article class="chat-message assistant">
+        <div class="chat-avatar">${icon("spark")}</div>
+        <div class="chat-bubble">
+          <div class="chat-meta">
+            <strong>AI ผู้สัมภาษณ์</strong>
+            <span>กำลังประมวลผล...</span>
+          </div>
+          <div class="typing-indicator" style="margin-top: 6px;">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+        </div>
+      </article>
+    `;
+  }
+
+  return html;
+}
+
+function renderInspector(stats) {
+  const r = state.respondent;
+  return `
+    <aside class="inspector">
+      <section class="timer-card">
+        <div class="timer-top">
+          <div>
+            <p class="timer-caption">เวลาในการสัมภาษณ์</p>
+            <p id="timerValue" class="timer-value">${formatDuration(elapsedMs())}</p>
+          </div>
+          <span class="status-chip ${state.timer.running ? "good" : ""}">${state.timer.running ? "กำลังจับเวลา" : "ยังไม่เริ่ม"}</span>
+        </div>
+        <p class="timer-caption">เป้าหมายเดิมของแบบสัมภาษณ์: ประมาณ 10-15 นาที</p>
+      </section>
+
+      <section class="panel side-panel">
+        <div class="side-heading">
+          <h2>ความยินยอมและการบันทึกเสียง</h2>
+          ${icon("check")}
+        </div>
+        <div class="consent-list">
+          ${renderToggle("informed", "อธิบายวัตถุประสงค์และสิทธิของผู้ให้ข้อมูลแล้ว")}
+          ${renderToggle("audio", "ได้รับอนุญาตให้บันทึกเสียง")}
+          ${renderToggle("privacy", "แจ้งการเก็บข้อมูลเป็นความลับแล้ว")}
+        </div>
+      </section>
+
+      <section class="panel side-panel">
+        <div class="side-heading">
+          <h2>ข้อมูลผู้ให้สัมภาษณ์</h2>
+          ${icon("user")}
+        </div>
+        <div class="form-grid">
+          ${renderInput("code", "รหัส", r.code)}
+          ${renderInput("license", "ประเภทใบอนุญาต", r.license)}
+          ${renderInput("duration", "ระยะเวลากิจการ", r.duration)}
+          ${renderInput("foodType", "ประเภทอาหารหลัก", r.foodType)}
+          ${renderInput("productCount", "จำนวนฉลาก", r.productCount)}
+          ${renderInput("role", "ตำแหน่งผู้รับผิดชอบ", r.role)}
+          <div class="field wide">
+            <label for="businessType">ประเภทกิจการ</label>
+            <select id="businessType" class="select" data-respondent="businessType">
+              ${["", "วิสาหกิจชุมชน / OTOP", "SME", "นิติบุคคล", "อื่น ๆ"]
+                .map((option) => `<option value="${escapeHtml(option)}" ${r.businessType === option ? "selected" : ""}>${option || "เลือกประเภทกิจการ"}</option>`)
+                .join("")}
+            </select>
+          </div>
+          <div class="field wide">
+            <span class="field-label">วิธีจัดทำฉลาก</span>
+            ${["ออกแบบและทำเองทั้งหมด", "จ้างร้านกราฟิกออกแบบ", "จ้างโรงงาน OEM จัดทำให้", "ใช้ซอฟต์แวร์/เครื่องมือออนไลน์ช่วย"]
+              .map((method) => renderMethod(method))
+              .join("")}
+          </div>
+          ${renderInput("methodOther", "ระบุเพิ่มเติม", r.methodOther, "wide")}
+        </div>
+      </section>
+
+      <section class="panel side-panel">
+        <div class="side-heading">
+          <h3>สรุปสถานะบันทึก</h3>
+          <span class="status-chip">${stats.percent}%</span>
+        </div>
+        <div class="summary-list">
+          ${renderRecentSummaries()}
+        </div>
+      </section>
+    </aside>
+  `;
+}
+
+function renderInput(key, label, value, className = "") {
+  return `
+    <div class="field ${className}">
+      <label for="${key}">${label}</label>
+      <input id="${key}" class="input" data-respondent="${key}" value="${escapeHtml(value)}" />
+    </div>
+  `;
+}
+
+function renderToggle(key, label) {
+  return `
+    <label class="toggle-row">
+      <input type="checkbox" data-consent="${key}" ${state.consent[key] ? "checked" : ""} />
+      <span>${label}</span>
+    </label>
+  `;
+}
+
+function renderMethod(method) {
+  const checked = state.respondent.methods.includes(method) ? "checked" : "";
+  return `
+    <label class="check-row">
+      <input type="checkbox" data-method="${escapeHtml(method)}" ${checked} />
+      <span>${escapeHtml(method)}</span>
+    </label>
+  `;
+}
+
+function renderRecentSummaries() {
+  const items = guide
+    .filter((question) => isComplete(question.id))
+    .slice(-4)
+    .map((question) => {
+      const answer = answerFor(question.id);
+      const text = answer.summary || answer.answer;
+      return `
+        <div class="summary-item">
+          <strong>${question.id.replace("q", "").replace("-", ".")} ${escapeHtml(question.short)}</strong>
+          <span>${escapeHtml(text)}</span>
+        </div>
+      `;
+    })
+    .join("");
+
+  return items || `<p class="empty-text">ยังไม่มีคำตอบที่บันทึกไว้</p>`;
+}
+
+function buildSuggestion(question, answer) {
+  const textLength = answer.answer.trim().length;
+  if (textLength < 40) {
+    return "ช่วยเล่าเป็นเหตุการณ์จริงสักหนึ่งตัวอย่างได้ไหมครับ/คะ ว่าเกิดอะไรขึ้น ใครเกี่ยวข้อง และจบอย่างไร?";
+  }
+
+  const remainingProbe = question.probes.find(
+    (_, probeIndex) => !answer.probes.includes(probeIndex),
+  );
+  if (remainingProbe) return remainingProbe;
+
+  if (!answer.summary.trim()) {
+    return "จากที่เล่ามา ถ้าให้สรุปเป็น 1-2 ประเด็นสำคัญ ท่านอยากให้ผู้พัฒนาเข้าใจอะไรที่สุด?";
+  }
+
+  return "มีประเด็นใดที่ยังไม่ได้เล่า แต่คิดว่าสำคัญต่อการพัฒนาแอปพลิเคชันตรวจสอบฉลากหรือไม่?";
+}
+
+function aiCurrentQuestion() {
+  return guide.find((question) => question.id === state.ai.currentId) || guide[0];
+}
+
+function aiCurrentIndex() {
+  return guide.findIndex((question) => question.id === aiCurrentQuestion().id);
+}
+
+function addAIMessage(role, text, questionId = state.ai.currentId) {
+  state.ai.messages.push({
+    role,
+    text,
+    questionId,
+    createdAt: new Date().toISOString(),
+  });
+}
+
+function aiOpeningText(question) {
+  return `สวัสดีครับ/ค่ะ ผมจะช่วยสัมภาษณ์ตามแบบสัมภาษณ์เชิงลึกของงานวิจัยนี้ โดยจะถามทีละข้อและถามเจาะลึกเมื่อคำตอบยังไม่ชัดเจน ขอเริ่มที่ข้อ ${question.id.replace("q", "").replace("-", ".")} นะครับ/คะ: ${question.title}`;
+}
+
+function startAIInterview(forceNew = false) {
+  if (forceNew) {
+    state.ai.messages = [];
+    state.ai.currentId = guide[0].id;
+    state.currentId = guide[0].id;
+    state.ai.completed = false;
+  }
+
+  state.ai.started = true;
+  state.ai.completed = false;
+  state.view = "ai";
+  state.currentId = state.ai.currentId;
+  if (!state.ai.messages.length || forceNew) {
+    addAIMessage("assistant", aiOpeningText(aiCurrentQuestion()));
+  }
+  startTimer();
+  saveState();
+  render();
+}
+
+function inferTags(text) {
+  const lower = text.toLowerCase();
+  const matched = [];
+  const rules = [
+    ["กฎหมาย", ["กฎหมาย", "ประกาศ", "อย.", "450", "445", "ข้อกำหนด"]],
+    ["เวลา", ["เวลา", "นาน", "รอ", "ล่าช้า", "วัน", "ชั่วโมง"]],
+    ["ต้นทุน", ["ต้นทุน", "ค่าใช้จ่าย", "พิมพ์ใหม่", "เสียเงิน", "ปรับ"]],
+    ["ความรู้", ["ไม่รู้", "ไม่เข้าใจ", "สับสน", "อบรม", "ความรู้"]],
+    ["การตรวจฉลาก", ["ตรวจ", "ฉลาก", "ถูกต้อง", "ผิด", "แก้"]],
+    ["AI", ["ai", "เอไอ", "ถ่ายรูป", "ภาพ", "อัตโนมัติ"]],
+    ["มือถือ", ["มือถือ", "โทรศัพท์", "แท็บเล็ต", "คอมพิวเตอร์", "ออนไลน์", "ออฟไลน์"]],
+    ["ผู้เชี่ยวชาญ", ["เจ้าหน้าที่", "ผู้เชี่ยวชาญ", "เภสัช", "อย.", "ยืนยัน"]],
+    ["ข้อกังวล", ["กังวล", "กลัว", "ไม่มั่นใจ", "เชื่อ", "ความถูกต้อง"]],
+    ["ข้อเสนอแนะ", ["อยาก", "ต้องการ", "ควร", "เสนอ", "ฟังก์ชัน"]],
+  ];
+
+  rules.forEach(([tag, keywords]) => {
+    if (keywords.some((keyword) => lower.includes(keyword))) matched.push(tag);
+  });
+
+  return matched;
+}
+
+function buildLocalSummary(text) {
+  const cleaned = text
+    .split(/\n+/)
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .join(" ");
+  if (!cleaned) return "";
+  const sentences = cleaned.split(/(?<=[.!?。])\s+|(?<=ครับ|ค่ะ|คะ)\s+/).filter(Boolean);
+  return (sentences.slice(0, 2).join(" ") || cleaned).slice(0, 220);
+}
+
+function appendAnswerFromChat(questionId, text) {
+  const answer = answerFor(questionId);
+  answer.answer = [answer.answer.trim(), text.trim()].filter(Boolean).join("\n\n");
+  answer.summary = buildLocalSummary(answer.answer);
+  answer.tags = [...new Set([...answer.tags, ...inferTags(text)])];
+  answer.coverage = coverageFor(questionId, answer).covered.map((item) => item.id);
+}
+
+function coveragePlanFor(questionId) {
+  return coverageGuide[questionId] || [];
+}
+
+function coverageFor(questionId, answer) {
+  const plan = coveragePlanFor(questionId);
+  const text = `${answer.answer || ""} ${answer.summary || ""}`.toLowerCase();
+  const explicit = new Set(answer.coverage || []);
+  const covered = plan.filter(
+    (item) =>
+      explicit.has(item.id) ||
+      item.keywords.some((keyword) => text.includes(keyword.toLowerCase())),
+  );
+  return { plan, covered, missing: plan.filter((item) => !covered.includes(item)) };
+}
+
+function answerExcerpt(text) {
+  const cleaned = text.replace(/\s+/g, " ").trim();
+  if (!cleaned) return "";
+  return cleaned.length > 86 ? `${cleaned.slice(0, 86)}...` : cleaned;
+}
+
+function buildAdaptiveFollowup(question, answer, mode = "auto") {
+  const coverage = coverageFor(question.id, answer);
+  const asked = new Set(answer.aiFollowups || []);
+  const missing = coverage.missing.find((item) => !asked.has(item.id));
+  const excerpt = answerExcerpt(answer.answer);
+
+  if (!answer.answer.trim() || answer.answer.trim().length < 36) {
+    return {
+      id: "concrete-example",
+      text:
+        "ช่วยเล่าเป็นเหตุการณ์จริงหรือสถานการณ์ที่เคยเจอสักตัวอย่างได้ไหมครับ/คะ เพื่อให้เข้าใจบริบทมากขึ้น?",
+    };
+  }
+
+  if (missing) {
+    const prefix = excerpt ? `จากที่เล่าว่า “${excerpt}” ` : "";
+    return {
+      id: missing.id,
+      text: `${prefix}${missing.followup}`,
+    };
+  }
+
+  if (mode === "manual") {
+    return {
+      id: "deeper-meaning",
+      text:
+        "ถ้าสรุปจากประสบการณ์นี้ ประเด็นไหนที่ท่านอยากให้ผู้พัฒนาแอปเข้าใจมากที่สุดครับ/คะ?",
+    };
+  }
+
+  return null;
+}
+
+function recordFollowup(answer, followupId) {
+  if (!followupId) return;
+  answer.aiFollowups = [...new Set([...(answer.aiFollowups || []), followupId])];
+}
+
+function shouldAskAnotherFollowup(question, answer, latestText) {
+  const coverage = coverageFor(question.id, answer);
+  const askedCount = (answer.aiFollowups || []).length;
+  const enoughText = answer.answer.trim().length >= 88;
+  const enoughCoverage = coverage.covered.length >= Math.min(2, coverage.plan.length);
+  const latestLooksThin = latestText.trim().length < 45;
+
+  if (latestLooksThin) return true;
+  if (coverage.covered.length === 0) return true;
+  if (!enoughText && askedCount < 1) return true;
+  if (!enoughCoverage && askedCount < 2) return true;
+  return false;
+}
+
+function askAIProbe() {
+  const question = aiCurrentQuestion();
+  state.ai.isTyping = true;
+  saveState();
+  render();
+
+  fetch(`${API_BASE_URL}/api/chat/followup`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      messages: state.ai.messages,
+      currentQuestion: question
+    })
+  })
+  .then(res => {
+    if (!res.ok) throw new Error("การเชื่อมต่อเซิร์ฟเวอร์ล้มเหลว");
+    return res.json();
+  })
+  .then(data => {
+    state.ai.isTyping = false;
+    if (data.response) {
+      addAIMessage("assistant", data.response, question.id);
+    } else {
+      addAIMessage("assistant", "มีประเด็นเพิ่มเติมที่อยากขยายความในข้อนี้ไหมครับ/คะ?", question.id);
+    }
+    saveState();
+    render();
+  })
+  .catch(err => {
+    console.error(err);
+    state.ai.isTyping = false;
+    const answer = answerFor(question.id);
+    const followup = buildAdaptiveFollowup(question, answer, "manual");
+    if (!followup) {
+      addAIMessage(
+        "assistant",
+        "จากคำตอบตอนนี้ประเด็นหลักค่อนข้างครอบคลุมแล้วครับ/ค่ะ ถ้าไม่มีเรื่องอยากเล่าเพิ่ม ผมจะขยับไปคำถามถัดไปได้เลย",
+        question.id
+      );
+    } else {
+      recordFollowup(answer, followup.id);
+      addAIMessage("assistant", followup.text, question.id);
+    }
+    saveState();
+    render();
+  });
+}
+
+function moveAINext(addMessage = true) {
+  const index = aiCurrentIndex();
+  if (index >= guide.length - 1) {
+    state.ai.completed = true;
+    state.ai.started = false;
+    if (addMessage) {
+      addAIMessage(
+        "assistant",
+        "ครบทุกข้อแล้วครับ/ค่ะ ขอบคุณสำหรับข้อมูลทั้งหมด ระบบได้เก็บคำตอบและบทสนทนาไว้แล้ว สามารถส่งข้อมูลเข้าเซอร์เวอร์ได้ทันที",
+      );
+    }
+    pauseTimer();
+    saveState();
+    render();
+    
+    // Auto extract interview data when chat finishes naturally
+    extractInterviewData();
+    return;
+  }
+
+  const nextQuestion = guide[index + 1];
+  state.ai.currentId = nextQuestion.id;
+  state.currentId = nextQuestion.id;
+  if (addMessage) {
+    addAIMessage(
+      "assistant",
+      `ขอบคุณครับ/ค่ะ ต่อไปขอถามข้อ ${nextQuestion.id.replace("q", "").replace("-", ".")}: ${nextQuestion.title}`,
+      nextQuestion.id,
+    );
+  }
+  saveState();
+  render();
+}
+
+function sendChatMessage() {
+  const input = document.querySelector("[data-chat-input]");
+  const text = input?.value.trim();
+  if (!text) return;
+
+  if (input) input.value = "";
+
+  if (!state.ai.started) {
+    state.ai.started = true;
+    startTimer();
+  }
+
+  const question = aiCurrentQuestion();
+  addAIMessage("user", text, question.id);
+  appendAnswerFromChat(question.id, text);
+
+  state.ai.isTyping = true;
+  saveState();
+  render();
+
+  fetch(`${API_BASE_URL}/api/chat/followup`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      messages: state.ai.messages,
+      currentQuestion: question
+    })
+  })
+  .then(res => {
+    if (!res.ok) throw new Error("การเชื่อมต่อเซิร์ฟเวอร์ล้มเหลว");
+    return res.json();
+  })
+  .then(data => {
+    state.ai.isTyping = false;
+    if (data.shouldMoveToNext) {
+      if (data.response) {
+        addAIMessage("assistant", data.response, question.id);
+      }
+      const idx = aiCurrentIndex();
+      if (idx >= guide.length - 1) {
+        state.ai.completed = true;
+        state.ai.started = false;
+        if (!data.response) {
+          addAIMessage(
+            "assistant",
+            "ครบทุกข้อแล้วครับ/ค่ะ ขอบคุณสำหรับข้อมูลทั้งหมด ระบบได้เก็บคำตอบและบทสนทนาไว้แล้ว สามารถส่งข้อมูลเข้าเซอร์เวอร์ได้ทันที",
+          );
+        }
+        pauseTimer();
+        saveState();
+        render();
+        extractInterviewData();
+      } else {
+        const nextQuestion = guide[idx + 1];
+        state.ai.currentId = nextQuestion.id;
+        state.currentId = nextQuestion.id;
+        if (data.response) {
+          addAIMessage("assistant", data.response, nextQuestion.id);
+        } else {
+          addAIMessage(
+            "assistant",
+            `ขอบคุณครับ/ค่ะ ต่อไปขอถามข้อ ${nextQuestion.id.replace("q", "").replace("-", ".")}: ${nextQuestion.title}`,
+            nextQuestion.id,
+          );
+        }
+        saveState();
+        render();
+      }
+    } else {
+      if (data.response) {
+        addAIMessage("assistant", data.response, question.id);
+      } else {
+        addAIMessage("assistant", "ช่วยเล่ารายละเอียดเพิ่มเติมในประเด็นนี้หน่อยได้ไหมครับ/คะ?", question.id);
+      }
+      saveState();
+      render();
+    }
+  })
+  .catch(err => {
+    console.error(err);
+    state.ai.isTyping = false;
+    const answer = answerFor(question.id);
+    const followup = buildAdaptiveFollowup(question, answer);
+
+    if (followup && shouldAskAnotherFollowup(question, answer, text)) {
+      recordFollowup(answer, followup.id);
+      addAIMessage("assistant", followup.text, question.id);
+    } else {
+      moveAINext(true);
+      return;
+    }
+    saveState();
+    render();
+  });
+}
+
+function refreshTimer() {
+  const timer = document.querySelector("#timerValue");
+  if (timer) timer.textContent = formatDuration(elapsedMs());
+}
+
+function startTimer() {
+  if (!state.timer.running) {
+    state.timer.running = true;
+    state.timer.startedAt = Date.now();
+    saveState();
+    render();
+  }
+}
+
+function pauseTimer() {
+  if (state.timer.running) {
+    state.timer.elapsedMs = elapsedMs();
+    state.timer.running = false;
+    state.timer.startedAt = null;
+    saveState();
+    render();
+  }
+}
+
+function navigate(direction) {
+  const index = currentIndex();
+  const nextIndex = index + direction;
+  if (nextIndex >= 0 && nextIndex < guide.length) {
+    state.currentId = guide[nextIndex].id;
+    state.helperText = "";
+    saveState();
+    render();
+  }
+}
+
+function showToast(message) {
+  const toast = document.querySelector("#toast");
+  if (!toast) return;
+  toast.textContent = message;
+  toast.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove("show"), 2400);
+}
+
+function syncChatViewport() {
+  if (state.view !== "ai") return;
+  const scrollToLatest = () => {
+    const chatLog = document.querySelector("[data-chat-log]");
+    if (!chatLog) return;
+    chatLog.scrollTop = chatLog.scrollHeight;
+  };
+
+  if (typeof requestAnimationFrame === "function") {
+    requestAnimationFrame(scrollToLatest);
+  } else {
+    setTimeout(scrollToLatest, 0);
+  }
+}
+
+function buildMarkdown() {
+  const r = state.respondent;
+  const consentText = [
+    state.consent.informed ? "อธิบายวัตถุประสงค์แล้ว" : "ยังไม่ยืนยันการอธิบายวัตถุประสงค์",
+    state.consent.audio ? "อนุญาตบันทึกเสียง" : "ไม่ระบุ/ไม่อนุญาตบันทึกเสียง",
+    state.consent.privacy ? "แจ้งการเก็บข้อมูลเป็นความลับแล้ว" : "ยังไม่ยืนยันการแจ้งความลับ",
+  ].join("; ");
+
+  const lines = [
+    "# บันทึกการสัมภาษณ์เชิงลึก ฉลากชัวร์",
+    "",
+    `วันที่บันทึก/ส่งข้อมูล: ${new Date().toLocaleString("th-TH")}`,
+    `ผู้สัมภาษณ์: ${state.interviewer || "-"}`,
+    `ระยะเวลาสัมภาษณ์: ${formatDuration(elapsedMs())}`,
+    `สถานะความยินยอม: ${consentText}`,
+    "",
+    "## ข้อมูลผู้ให้สัมภาษณ์",
+    `- รหัสผู้ให้สัมภาษณ์: ${r.code || "-"}`,
+    `- ประเภทใบอนุญาต: ${r.license || "-"}`,
+    `- ระยะเวลาดำเนินกิจการ: ${r.duration || "-"}`,
+    `- ประเภทอาหารที่ผลิต: ${r.foodType || "-"}`,
+    `- จำนวนผลิตภัณฑ์ที่มีฉลาก: ${r.productCount || "-"}`,
+    `- ตำแหน่งผู้รับผิดชอบในการทำฉลาก: ${r.role || "-"}`,
+    `- ประเภทกิจการ: ${r.businessType || "-"}`,
+    `- วิธีจัดทำฉลาก: ${r.methods.length ? r.methods.join(", ") : "-"}${r.methodOther ? ` (${r.methodOther})` : ""}`,
+    "",
+    "## คำตอบรายข้อ",
+  ];
+
+  guide.forEach((question) => {
+    const answer = answerFor(question.id);
+    lines.push("");
+    lines.push(`### ${question.id.replace("q", "").replace("-", ".")} ${question.short}`);
+    lines.push(`คำถามหลัก: ${question.title}`);
+    lines.push("");
+    lines.push("คำถามเพื่อเจาะลึกที่ถามแล้ว:");
+    const asked = question.probes.filter((_, index) => answer.probes.includes(index));
+    if (asked.length) {
+      asked.forEach((probe) => lines.push(`- ${probe}`));
+    } else {
+      lines.push("- ยังไม่ได้ทำเครื่องหมาย");
+    }
+    lines.push("");
+    lines.push("บันทึกคำตอบ:");
+    lines.push(answer.answer.trim() || "-");
+    lines.push("");
+    lines.push("สรุปประเด็นสำคัญ:");
+    lines.push(answer.summary.trim() || "-");
+    lines.push("");
+    const coverage = coverageFor(question.id, answer).covered.map((item) => item.label);
+    lines.push(`ประเด็นที่ครอบคลุมจาก AI chat: ${coverage.length ? coverage.join(", ") : "-"}`);
+    lines.push("");
+    lines.push(`แท็ก: ${answer.tags.length ? answer.tags.join(", ") : "-"}`);
+  });
+
+  if (state.ai.messages.length) {
+    lines.push("");
+    lines.push("## บทสนทนา AI สัมภาษณ์ผ่านแชท");
+    state.ai.messages.forEach((message) => {
+      const question = guide.find((item) => item.id === message.questionId);
+      const role = message.role === "assistant" ? "AI ผู้สัมภาษณ์" : "ผู้ให้สัมภาษณ์";
+      const questionLabel = question ? `ข้อ ${question.id.replace("q", "").replace("-", ".")}` : "-";
+      lines.push("");
+      lines.push(`**${role} (${questionLabel})**`);
+      lines.push(message.text);
+    });
+  }
+
+  return lines.join("\n");
+}
+
+function buildSubmissionPayload() {
+  const content = buildMarkdown();
+  const code = state.respondent.code?.trim() || "interview";
+  return {
+    markdown: content,
+    respondentCode: code,
+    submittedAt: new Date().toISOString(),
+    elapsedMs: elapsedMs(),
+    respondent: state.respondent,
+    consent: state.consent,
+    interviewer: state.interviewer,
+    answers: state.answers,
+    ai: state.ai,
+  };
+}
+
+async function submitInterview() {
+  const payload = buildSubmissionPayload();
+  const isStaticGithubPages = window.location.hostname.endsWith("github.io");
+
+  if (isStaticGithubPages && !API_BASE_URL) {
+    showToast("GitHub Pages ต้องต่อ backend เพิ่มก่อน จึงจะบันทึกไฟล์ .md ได้");
+    return;
+  }
 
   try {
-    if (!("DecompressionStream" in window)) {
-      throw new Error("This browser does not support DecompressionStream.");
+    const response = await fetch(`${API_BASE_URL}/api/interviews`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(result.error || "บันทึกข้อมูลไม่สำเร็จ");
     }
-    const bytes = Uint8Array.from(atob(compressedSource), (char) => char.charCodeAt(0));
-    const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"));
-    const source = await new Response(stream).text();
-    (0, eval)(source);
+
+    showToast(`บันทึกเข้าเซอร์เวอร์แล้ว: ${result.filename}`);
   } catch (error) {
-    document.body.innerHTML = `<main style="font-family: system-ui, sans-serif; max-width: 680px; margin: 48px auto; padding: 24px; line-height: 1.6;"><h1>โหลด Interview Studio ไม่สำเร็จ</h1><p>เบราว์เซอร์นี้ไม่รองรับการเปิดชุดสคริปต์ของหน้า GitHub Pages กรุณาใช้ Chrome, Edge, Safari หรือ Firefox เวอร์ชันล่าสุด</p><pre>${String(error.message || error)}</pre></main>`;
+    const isFileMode = window.location.protocol === "file:";
+    showToast(
+      isFileMode
+        ? "ต้องเปิดแอปผ่าน server จึงจะส่งข้อมูลเข้าโฟลเดอร์กลางได้"
+        : error.message || "ส่งข้อมูลไม่สำเร็จ",
+    );
   }
-})();
+}
+
+async function extractInterviewData() {
+  if (!state.ai.messages.length) {
+    showToast("ไม่มีข้อความสนทนาที่จะดึงข้อมูล");
+    return;
+  }
+
+  state.isExtracting = true;
+  saveState();
+  render();
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/chat/extract`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        messages: state.ai.messages
+      })
+    });
+
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(result.error || "ดึงข้อมูลจากบทสนทนาไม่สำเร็จ");
+    }
+
+    if (result.answers) {
+      Object.keys(result.answers).forEach((questionId) => {
+        if (state.answers[questionId]) {
+          const extracted = result.answers[questionId];
+          state.answers[questionId].answer = extracted.answer || "";
+          state.answers[questionId].summary = extracted.summary || "";
+          state.answers[questionId].tags = Array.isArray(extracted.tags) ? extracted.tags : [];
+          state.answers[questionId].probes = Array.isArray(extracted.probes) ? extracted.probes : [];
+        }
+      });
+      showToast("ดึงข้อมูลสำเร็จและกรอกฟอร์มแล้ว!");
+    } else {
+      throw new Error("รูปแบบข้อมูลที่ได้รับไม่ถูกต้อง");
+    }
+  } catch (error) {
+    console.error(error);
+    showToast(error.message || "เกิดข้อผิดพลาดในการดึงข้อมูล");
+  } finally {
+    state.isExtracting = false;
+    saveState();
+    render();
+  }
+}
+
+function clearCurrent() {
+  const question = currentQuestion();
+  state.answers[question.id] = {
+    answer: "",
+    summary: "",
+    probes: [],
+    tags: [],
+    coverage: [],
+    aiFollowups: [],
+  };
+  state.helperText = "";
+  saveState();
+  render();
+}
+
+function resetAll() {
+  const keepTimer = window.confirm("ต้องการล้างข้อมูลสัมภาษณ์ทั้งหมดในเครื่องนี้หรือไม่?");
+  if (!keepTimer) return;
+  state = normalizeState(blankState);
+  localStorage.removeItem(STORAGE_KEY);
+  render();
+  showToast("ล้างข้อมูลเรียบร้อยแล้ว");
+}
+
+document.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-action]");
+  if (!button) return;
+
+  const action = button.dataset.action;
+  const question = currentQuestion();
+  const answer = answerFor(question.id);
+
+  if (action === "set-view") {
+    state.view = button.dataset.view;
+    if (state.view === "ai") state.currentId = state.ai.currentId;
+    saveState();
+    render();
+  }
+  if (action === "start-timer") startTimer();
+  if (action === "pause-timer") pauseTimer();
+  if (action === "start-ai") startAIInterview(state.ai.completed);
+  if (action === "ask-ai-probe") askAIProbe();
+  if (action === "ai-next") moveAINext();
+  if (action === "finish-ai") {
+    state.ai.completed = true;
+    state.ai.started = false;
+    addAIMessage(
+      "assistant",
+      "ผมจะจบการสัมภาษณ์ไว้ตรงนี้ครับ/ค่ะ ระบบได้เก็บข้อมูลบทสนทนาและคำตอบรายข้อไว้แล้ว",
+    );
+    pauseTimer();
+    saveState();
+    render();
+    
+    // Auto extract interview data when finishing manually
+    extractInterviewData();
+  }
+  if (action === "extract-ai") {
+    extractInterviewData();
+  }
+  if (action === "send-chat") sendChatMessage();
+  if (action === "save") saveState(true);
+  if (action === "submit") submitInterview();
+  if (action === "prev") navigate(-1);
+  if (action === "next") navigate(1);
+  if (action === "clear-current") clearCurrent();
+  if (action === "suggest") {
+    state.helperText = buildSuggestion(question, answer);
+    saveState();
+    render();
+    showToast("เลือกคำถามถามต่อให้แล้ว");
+  }
+  if (action === "go") {
+    state.currentId = button.dataset.id;
+    if (state.view === "ai") state.ai.currentId = button.dataset.id;
+    state.helperText = "";
+    saveState();
+    render();
+  }
+  if (action === "tag") {
+    const target = answerFor(button.dataset.id);
+    const tag = button.dataset.tag;
+    target.tags = target.tags.includes(tag)
+      ? target.tags.filter((item) => item !== tag)
+      : [...target.tags, tag];
+    saveState();
+    render();
+  }
+  if (action === "reset") resetAll();
+});
+
+document.addEventListener("input", (event) => {
+  const target = event.target;
+  if (target.matches("[data-answer]")) {
+    state.answers[target.dataset.answer].answer = target.value;
+    state.helperText = "";
+    saveState();
+  }
+  if (target.matches("[data-summary]")) {
+    state.answers[target.dataset.summary].summary = target.value;
+    saveState();
+  }
+  if (target.matches("[data-respondent]")) {
+    state.respondent[target.dataset.respondent] = target.value;
+    saveState();
+  }
+});
+
+document.addEventListener("change", (event) => {
+  const target = event.target;
+  if (target.matches("[data-consent]")) {
+    state.consent[target.dataset.consent] = target.checked;
+    saveState();
+    render();
+  }
+  if (target.matches("[data-method]")) {
+    const method = target.dataset.method;
+    state.respondent.methods = target.checked
+      ? [...new Set([...state.respondent.methods, method])]
+      : state.respondent.methods.filter((item) => item !== method);
+    saveState();
+  }
+  if (target.matches("[data-probe]")) {
+    const questionId = target.dataset.probe;
+    const probeIndex = Number(target.dataset.probeIndex);
+    const answer = answerFor(questionId);
+    answer.probes = target.checked
+      ? [...new Set([...answer.probes, probeIndex])]
+      : answer.probes.filter((index) => index !== probeIndex);
+    saveState();
+    render();
+  }
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.target.matches?.("[data-chat-input]") && event.key === "Enter" && !event.shiftKey) {
+    event.preventDefault();
+    sendChatMessage();
+    return;
+  }
+
+  const isTyping = ["TEXTAREA", "INPUT", "SELECT"].includes(document.activeElement?.tagName);
+  if (isTyping) return;
+  if (event.key === "ArrowLeft") navigate(-1);
+  if (event.key === "ArrowRight") navigate(1);
+});
+
+setInterval(refreshTimer, 1000);
+render();
