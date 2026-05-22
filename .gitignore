@@ -1,3 +1,6 @@
 .DS_Store
 interview-studio/data/interviews/*
 !interview-studio/data/interviews/.gitkeep
+.env
+interview-studio/.env
+*.env
