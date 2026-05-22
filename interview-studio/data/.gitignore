@@ -1,0 +1,4 @@
+interviews/**/*.md
+interviews/**/*.json
+interviews/index.jsonl
+!interviews/.gitkeep
