@@ -615,6 +615,7 @@ function renderTopbar(stats) {
         <span class="status-chip ${stats.done ? "good" : ""}">${stats.done}/${stats.total} คำถาม</span>
         <button class="button accent" data-action="${timerAction}">${icon(state.timer.running ? "pause" : "play")}<span>${timerLabel}</span></button>
         <button class="button soft" data-action="save">${icon("save")}<span>บันทึกฉบับร่าง</span></button>
+        <button class="button warning" data-action="reset">${icon("trash")}<span>ล้างข้อมูลทั้งหมด</span></button>
         <button class="button primary" data-action="submit">${icon("send")}<span>ส่งข้อมูล</span></button>
       </div>
     </header>
@@ -795,7 +796,7 @@ function renderAIInterview(stats) {
         </div>
 
         <div class="chat-compose">
-          <textarea class="chat-input" data-chat-input placeholder="พิมพ์คำตอบของผู้ให้สัมภาษณ์ หรือถอดคำพูดจากการสนทนา..."></textarea>
+          <textarea class="chat-input" data-chat-input placeholder="พิมพ์คำตอบของผู้ให้สัมภาษณ์ หรือถอดคำพูดจากการสนทนา... (หรือใช้ฟังก์ชันพูดแทนการพิมพ์)"></textarea>
           <div class="chat-actions">
             <div class="toolbar-group">
               <button class="button accent" data-action="start-ai">${icon("message")}<span>${state.ai.started ? "เริ่มช่วงใหม่" : "เริ่ม AI สัมภาษณ์"}</span></button>
@@ -803,7 +804,13 @@ function renderAIInterview(stats) {
               <button class="button warning" data-action="finish-ai">${icon("check")}<span>จบสัมภาษณ์</span></button>
               <button class="button soft" data-action="extract-ai">${icon("spark")}<span>ดึงข้อมูล AI</span></button>
             </div>
-            <button class="button primary" data-action="send-chat">${icon("send")}<span>ส่งคำตอบ</span></button>
+            <div class="toolbar-group">
+              <button class="button soft" data-action="toggle-mic">
+                ${icon("mic")}
+                <span>พูดคำตอบ</span>
+              </button>
+              <button class="button primary" data-action="send-chat">${icon("send")}<span>ส่งคำตอบ</span></button>
+            </div>
           </div>
         </div>
       </article>
@@ -1343,6 +1350,89 @@ function sendChatMessage() {
   });
 }
 
+let recognition = null;
+let isListening = false;
+
+function toggleSpeechRecognition() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    showToast("เบราว์เซอร์นี้ไม่รองรับการพิมพ์ด้วยเสียง แนะนำให้ใช้แป้นพิมพ์ของระบบแทน");
+    return;
+  }
+
+  const micButton = document.querySelector("[data-action='toggle-mic']");
+  const input = document.querySelector("[data-chat-input]");
+
+  if (isListening) {
+    if (recognition) {
+      recognition.stop();
+    }
+    return;
+  }
+
+  try {
+    recognition = new SpeechRecognition();
+    recognition.lang = "th-TH";
+    recognition.continuous = true;
+    recognition.interimResults = false;
+
+    recognition.onstart = () => {
+      isListening = true;
+      if (micButton) {
+        micButton.classList.add("warning");
+        const label = micButton.querySelector("span");
+        if (label) label.textContent = "กำลังฟัง (คลิกเพื่อหยุด)";
+      }
+      showToast("เริ่มฟังเสียงพูดภาษาไทยแล้ว...");
+    };
+
+    recognition.onresult = (event) => {
+      let textSegment = "";
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        if (event.results[i].isFinal) {
+          textSegment += event.results[i][0].transcript;
+        }
+      }
+
+      if (textSegment && input) {
+        const currentText = input.value.trim();
+        input.value = currentText ? `${currentText} ${textSegment}` : textSegment;
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+      }
+    };
+
+    recognition.onerror = (event) => {
+      console.error("Speech recognition error:", event.error);
+      if (event.error === "not-allowed") {
+        showToast("ไม่ได้รับอนุญาตให้ใช้ไมโครโฟน กรุณาเปิดสิทธิ์ไมโครโฟนในเบราว์เซอร์");
+      } else {
+        showToast("เกิดข้อผิดพลาดในการฟังเสียง: " + event.error);
+      }
+      stopListeningUI();
+    };
+
+    recognition.onend = () => {
+      stopListeningUI();
+    };
+
+    recognition.start();
+  } catch (e) {
+    console.error("Speech recognition init failed:", e);
+    showToast("ไม่สามารถเปิดใช้งานไมโครโฟนได้");
+    stopListeningUI();
+  }
+}
+
+function stopListeningUI() {
+  isListening = false;
+  const micButton = document.querySelector("[data-action='toggle-mic']");
+  if (micButton) {
+    micButton.classList.remove("warning");
+    const label = micButton.querySelector("span");
+    if (label) label.textContent = "พูดคำตอบ";
+  }
+}
+
 function refreshTimer() {
   const timer = document.querySelector("#timerValue");
   if (timer) timer.textContent = formatDuration(elapsedMs());
@@ -1628,6 +1718,9 @@ document.addEventListener("click", (event) => {
   }
   if (action === "extract-ai") {
     extractInterviewData();
+  }
+  if (action === "toggle-mic") {
+    toggleSpeechRecognition();
   }
   if (action === "send-chat") sendChatMessage();
   if (action === "save") saveState(true);
