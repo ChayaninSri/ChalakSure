@@ -29,10 +29,13 @@ try {
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
 const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-1.5-flash";
-const SUPABASE_URL = (process.env.SUPABASE_URL || "").replace(/\/$/, "");
+const SUPABASE_URL = normalizeSupabaseUrl(process.env.SUPABASE_URL || "");
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
-const SUPABASE_BUCKET = process.env.SUPABASE_BUCKET || "interviews";
-const SUPABASE_INTERVIEWS_TABLE = process.env.SUPABASE_INTERVIEWS_TABLE || "interviews";
+const SUPABASE_BUCKET = normalizeSupabaseName(process.env.SUPABASE_BUCKET, "interviews");
+const SUPABASE_INTERVIEWS_TABLE = normalizeSupabaseName(
+  process.env.SUPABASE_INTERVIEWS_TABLE,
+  "interviews",
+);
 
 const PORT = Number(process.env.PORT || 5173);
 const HOST = process.env.HOST || "127.0.0.1";
@@ -51,6 +54,32 @@ const mimeTypes = {
   ".jpeg": "image/jpeg",
   ".svg": "image/svg+xml; charset=utf-8",
 };
+
+function normalizeSupabaseUrl(value) {
+  const trimmed = String(value || "").trim().replace(/\/+$/, "");
+  if (!trimmed) return "";
+
+  try {
+    const url = new URL(trimmed);
+    return url.origin;
+  } catch {
+    return trimmed;
+  }
+}
+
+function normalizeSupabaseName(value, fallback) {
+  const trimmed = String(value || "").trim().replace(/^\/+|\/+$/g, "");
+  const name = trimmed.split("/").filter(Boolean).pop() || "";
+  return name.replace(/^public\./, "") || fallback;
+}
+
+function supabaseSetupHint(message) {
+  if (message !== "Invalid path specified in request URL") return message;
+  return [
+    message,
+    "ตรวจสอบ Vercel Environment Variables: SUPABASE_URL ต้องเป็น Project URL เท่านั้น เช่น https://xxxx.supabase.co และไม่ต้องใส่ /rest/v1 หรือ /storage/v1 ต่อท้าย",
+  ].join(" - ");
+}
 
 function sendJson(res, status, payload) {
   res.writeHead(status, {
@@ -140,7 +169,7 @@ async function supabaseRequest(pathname, options = {}) {
       data?.error ||
       (typeof data === "string" ? data : "") ||
       `Supabase request failed with status ${response.status}`;
-    throw Object.assign(new Error(message), { status: response.status });
+    throw Object.assign(new Error(supabaseSetupHint(message)), { status: response.status });
   }
 
   return data;
