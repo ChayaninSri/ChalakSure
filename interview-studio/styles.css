@@ -1256,7 +1256,7 @@ button {
 @media (hover: none) and (pointer: coarse), (max-width: 820px) {
   .app-shell:not(.setup-mode),
   .touch-ui:not(.setup-mode) {
-    padding-bottom: calc(176px + env(safe-area-inset-bottom));
+    padding-bottom: calc(128px + env(safe-area-inset-bottom));
   }
 
   .app-shell:not(.setup-mode) .topbar,
@@ -1299,8 +1299,7 @@ button {
 
   .app-shell:not(.setup-mode) .top-actions > .status-chip,
   .touch-ui:not(.setup-mode) .top-actions > .status-chip {
-    width: 100%;
-    min-width: 0;
+    display: none;
   }
 
   .app-shell:not(.setup-mode) .top-actions > .button,
@@ -1312,7 +1311,7 @@ button {
 }
 
 .touch-ui:not(.setup-mode) {
-  padding-bottom: calc(176px + env(safe-area-inset-bottom));
+  padding-bottom: calc(128px + env(safe-area-inset-bottom));
 }
 
 .touch-ui:not(.setup-mode) .topbar {
@@ -1358,8 +1357,7 @@ button {
 }
 
 .touch-ui:not(.setup-mode) .top-actions > .status-chip {
-  width: 100%;
-  min-width: 0;
+  display: none;
 }
 
 .touch-ui:not(.setup-mode) .top-actions > .button {
