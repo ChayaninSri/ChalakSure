@@ -798,6 +798,46 @@ button {
   font-size: 13px;
 }
 
+.ai-current-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: min(330px, 100%);
+}
+
+.ai-current-actions .button {
+  min-height: 42px;
+  padding: 7px 10px;
+}
+
+.voice-toggle {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #ffffff;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.voice-toggle input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--mint);
+}
+
+.voice-toggle.disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 .chat-log {
   min-height: 420px;
   max-height: max(380px, calc(100vh - 420px));
@@ -1662,6 +1702,28 @@ button {
   .question-meta {
     justify-content: flex-start;
     gap: 6px;
+  }
+
+  .ai-current-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .ai-current-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    min-width: 0;
+    justify-content: stretch;
+  }
+
+  .ai-current-actions .button,
+  .voice-toggle {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .ai-current-actions .button:last-child {
+    grid-column: 1 / -1;
   }
 
   .status-chip {

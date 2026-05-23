@@ -536,6 +536,7 @@ const blankState = {
     completed: false,
     messages: [],
     isTyping: false,
+    autoSpeakQuestions: false,
   },
   isExtracting: false,
   helperText: "",
@@ -571,6 +572,8 @@ function icon(name) {
       '<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"></path><path d="M17 21v-8H7v8"></path><path d="M7 3v5h8"></path>',
     spark:
       '<path d="M12 3l1.7 4.8L18 10l-4.3 2.2L12 17l-1.7-4.8L6 10l4.3-2.2L12 3Z"></path><path d="M19 3v4"></path><path d="M21 5h-4"></path><path d="M5 17v4"></path><path d="M7 19H3"></path>',
+    volume:
+      '<path d="M11 5 6 9H3v6h3l5 4V5Z"></path><path d="M15.5 8.5a5 5 0 0 1 0 7"></path><path d="M18.5 5.5a9 9 0 0 1 0 13"></path>',
     message:
       '<path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4Z"></path>',
     send:
@@ -605,6 +608,7 @@ function normalizeState(source) {
   next.consent = { ...blankState.consent, ...(source?.consent || {}) };
   next.timer = { ...blankState.timer, ...(source?.timer || {}) };
   next.ai = { ...blankState.ai, ...(source?.ai || {}) };
+  if (typeof next.ai.autoSpeakQuestions !== "boolean") next.ai.autoSpeakQuestions = false;
   next.answers = source?.answers || {};
 
   guide.forEach((question) => {
@@ -1036,6 +1040,7 @@ function renderAIInterview(stats) {
   const answer = answerFor(question.id);
   const index = aiCurrentIndex() + 1;
   const coverage = coverageFor(question.id, answer);
+  const speechSupported = hasSpeechSynthesis();
 
   return `
     <section class="workspace ai-workspace">
@@ -1058,7 +1063,16 @@ function renderAIInterview(stats) {
             <h3>${question.id.replace("q", "").replace("-", ".")} ${escapeHtml(question.short)}</h3>
             <p>${escapeHtml(question.title)}</p>
           </div>
-          <button class="button soft" data-action="ask-ai-probe">${icon("spark")}<span>ถามต่อจากคำตอบ</span></button>
+          <div class="ai-current-actions">
+            <button class="button soft" data-action="speak-question" ${speechSupported ? "" : "disabled"} title="ฟังคำถามที่กำลังถาม">
+              ${icon("volume")}<span>ฟังคำถาม</span>
+            </button>
+            <label class="voice-toggle ${speechSupported ? "" : "disabled"}" title="อ่านคำถามใหม่ของ AI อัตโนมัติ">
+              <input type="checkbox" data-ai-auto-speak ${state.ai.autoSpeakQuestions ? "checked" : ""} ${speechSupported ? "" : "disabled"} />
+              <span>อ่านอัตโนมัติ</span>
+            </label>
+            <button class="button soft" data-action="ask-ai-probe">${icon("spark")}<span>ถามต่อจากคำตอบ</span></button>
+          </div>
         </div>
 
         <div class="chat-log" data-chat-log aria-live="polite">
@@ -1305,6 +1319,51 @@ function aiCurrentIndex() {
   return guide.findIndex((question) => question.id === aiCurrentQuestion().id);
 }
 
+function hasSpeechSynthesis() {
+  return "speechSynthesis" in window && "SpeechSynthesisUtterance" in window;
+}
+
+function cleanSpeechText(text) {
+  return String(text || "")
+    .replace(/ครับ\/คะ|ครับ\/ค่ะ/g, "ครับค่ะ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function speakText(text, showUnsupported = true) {
+  const cleanText = cleanSpeechText(text);
+  if (!cleanText) return;
+
+  if (!hasSpeechSynthesis()) {
+    if (showUnsupported) showToast("เบราว์เซอร์นี้ยังไม่รองรับการอ่านออกเสียง");
+    return;
+  }
+
+  window.speechSynthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance(cleanText);
+  utterance.lang = "th-TH";
+  utterance.rate = 0.92;
+  utterance.pitch = 1;
+  window.speechSynthesis.speak(utterance);
+}
+
+function stopSpeaking() {
+  if (hasSpeechSynthesis()) window.speechSynthesis.cancel();
+}
+
+function currentQuestionSpeechText() {
+  const question = aiCurrentQuestion();
+  const latestAssistant = [...state.ai.messages]
+    .reverse()
+    .find((message) => message.role === "assistant" && message.questionId === question.id);
+
+  return latestAssistant?.text || `${question.id.replace("q", "").replace("-", ".")} ${question.title}`;
+}
+
+function speakCurrentQuestion() {
+  speakText(currentQuestionSpeechText());
+}
+
 function addAIMessage(role, text, questionId = state.ai.currentId) {
   state.ai.messages.push({
     role,
@@ -1312,6 +1371,10 @@ function addAIMessage(role, text, questionId = state.ai.currentId) {
     questionId,
     createdAt: new Date().toISOString(),
   });
+
+  if (role === "assistant" && state.ai.autoSpeakQuestions) {
+    speakText(text, false);
+  }
 }
 
 function aiOpeningText(question) {
@@ -1610,7 +1673,7 @@ function moveAINext(addMessage = true) {
     if (addMessage) {
       addAIMessage(
         "assistant",
-        "ครบทุกข้อแล้วครับ/ค่ะ ขอบคุณสำหรับข้อมูลทั้งหมด ระบบได้เก็บคำตอบและบทสนทนาไว้แล้ว สามารถส่งข้อมูลเข้าเซอร์เวอร์ได้ทันที",
+        "ครบทุกข้อแล้วครับ/ค่ะ ขอบคุณสำหรับข้อมูลทั้งหมด ระบบได้เก็บคำตอบและบทสนทนาไว้แล้ว กรุณากดปุ่ม \"ส่งข้อมูลเมื่อครบถ้วน\" ด้านบน เพื่อส่งคำตอบเข้าเซอร์เวอร์ครับ/ค่ะ",
       );
     }
     pauseTimer();
@@ -1710,12 +1773,10 @@ function sendChatMessage() {
       if (idx >= guide.length - 1) {
         state.ai.completed = true;
         state.ai.started = false;
-        if (!data.response) {
-          addAIMessage(
-            "assistant",
-            "ครบทุกข้อแล้วครับ/ค่ะ ขอบคุณสำหรับข้อมูลทั้งหมด ระบบได้เก็บคำตอบและบทสนทนาไว้แล้ว สามารถส่งข้อมูลเข้าเซอร์เวอร์ได้ทันที",
-          );
-        }
+        addAIMessage(
+          "assistant",
+          "ครบทุกข้อแล้วครับ/ค่ะ ระบบได้เก็บคำตอบและบทสนทนาไว้แล้ว กรุณากดปุ่ม \"ส่งข้อมูลเมื่อครบถ้วน\" ด้านบน เพื่อส่งคำตอบเข้าเซอร์เวอร์ครับ/ค่ะ",
+        );
         pauseTimer();
         saveState();
         render();
@@ -2155,6 +2216,7 @@ document.addEventListener("click", (event) => {
     "finish-ai",
     "extract-ai",
     "toggle-mic",
+    "speak-question",
     "send-chat",
     "submit",
   ]);
@@ -2219,7 +2281,7 @@ document.addEventListener("click", (event) => {
     state.ai.started = false;
     addAIMessage(
       "assistant",
-      "ผมจะจบการสัมภาษณ์ไว้ตรงนี้ครับ/ค่ะ ระบบได้เก็บข้อมูลบทสนทนาและคำตอบรายข้อไว้แล้ว",
+      "ผมจะจบการสัมภาษณ์ไว้ตรงนี้ครับ/ค่ะ ระบบได้เก็บข้อมูลบทสนทนาและคำตอบรายข้อไว้แล้ว กรุณากดปุ่ม \"ส่งข้อมูลเมื่อครบถ้วน\" ด้านบน เพื่อส่งคำตอบเข้าเซอร์เวอร์ครับ/ค่ะ",
     );
     pauseTimer();
     saveState();
@@ -2233,6 +2295,9 @@ document.addEventListener("click", (event) => {
   }
   if (action === "toggle-mic") {
     toggleSpeechRecognition();
+  }
+  if (action === "speak-question") {
+    speakCurrentQuestion();
   }
   if (action === "send-chat") sendChatMessage();
   if (action === "save") saveState(true);
@@ -2324,6 +2389,22 @@ document.addEventListener("change", (event) => {
       : answer.probes.filter((index) => index !== probeIndex);
     saveState();
     render();
+  }
+  if (target.matches("[data-ai-auto-speak]")) {
+    if (!hasSpeechSynthesis()) {
+      target.checked = false;
+      state.ai.autoSpeakQuestions = false;
+      showToast("เบราว์เซอร์นี้ยังไม่รองรับการอ่านออกเสียง");
+      saveState();
+      render();
+      return;
+    }
+
+    state.ai.autoSpeakQuestions = target.checked;
+    if (!target.checked) stopSpeaking();
+    saveState();
+    showToast(target.checked ? "เปิดอ่านคำถามอัตโนมัติแล้ว" : "ปิดอ่านคำถามอัตโนมัติแล้ว");
+    if (target.checked) speakCurrentQuestion();
   }
 });
 
