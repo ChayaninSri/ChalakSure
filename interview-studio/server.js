@@ -184,7 +184,7 @@ async function uploadMarkdownToSupabase(storagePath, markdown) {
     {
       method: "POST",
       headers: {
-        "Content-Type": "text/markdown; charset=utf-8",
+        "Content-Type": "text/markdown",
         "x-upsert": "false",
       },
       body: markdown,
