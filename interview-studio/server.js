@@ -29,6 +29,10 @@ try {
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
 const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-1.5-flash";
+const SUPABASE_URL = (process.env.SUPABASE_URL || "").replace(/\/$/, "");
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+const SUPABASE_BUCKET = process.env.SUPABASE_BUCKET || "interviews";
+const SUPABASE_INTERVIEWS_TABLE = process.env.SUPABASE_INTERVIEWS_TABLE || "interviews";
 
 const PORT = Number(process.env.PORT || 5173);
 const HOST = process.env.HOST || "127.0.0.1";
@@ -74,6 +78,16 @@ function monthFolder(date = new Date()) {
 }
 
 async function readJsonBody(req) {
+  if (req.body) {
+    if (typeof req.body === "object" && !Buffer.isBuffer(req.body)) return req.body;
+    const raw = Buffer.isBuffer(req.body) ? req.body.toString("utf8") : String(req.body);
+    try {
+      return JSON.parse(raw || "{}");
+    } catch {
+      throw Object.assign(new Error("รูปแบบข้อมูลไม่ถูกต้อง"), { status: 400 });
+    }
+  }
+
   const chunks = [];
   let size = 0;
 
@@ -93,7 +107,132 @@ async function readJsonBody(req) {
   }
 }
 
+async function supabaseRequest(pathname, options = {}) {
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+    throw Object.assign(
+      new Error("กรุณาตั้งค่า SUPABASE_URL และ SUPABASE_SERVICE_ROLE_KEY ก่อนบันทึกข้อมูลบน cloud"),
+      { status: 500 },
+    );
+  }
+
+  const response = await fetch(`${SUPABASE_URL}${pathname}`, {
+    ...options,
+    headers: {
+      apikey: SUPABASE_SERVICE_ROLE_KEY,
+      Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+      ...(options.headers || {}),
+    },
+  });
+
+  const raw = await response.text();
+  let data = null;
+  if (raw) {
+    try {
+      data = JSON.parse(raw);
+    } catch {
+      data = raw;
+    }
+  }
+
+  if (!response.ok) {
+    const message =
+      data?.message ||
+      data?.error ||
+      (typeof data === "string" ? data : "") ||
+      `Supabase request failed with status ${response.status}`;
+    throw Object.assign(new Error(message), { status: response.status });
+  }
+
+  return data;
+}
+
+async function uploadMarkdownToSupabase(storagePath, markdown) {
+  await supabaseRequest(
+    `/storage/v1/object/${encodeURIComponent(SUPABASE_BUCKET)}/${storagePath
+      .split("/")
+      .map((part) => encodeURIComponent(part))
+      .join("/")}`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "text/markdown; charset=utf-8",
+        "x-upsert": "false",
+      },
+      body: markdown,
+    },
+  );
+}
+
+async function insertInterviewRecord(record) {
+  const table = encodeURIComponent(SUPABASE_INTERVIEWS_TABLE);
+  const result = await supabaseRequest(`/rest/v1/${table}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Prefer: "return=representation",
+    },
+    body: JSON.stringify(record),
+  });
+
+  return Array.isArray(result) ? result[0] : result;
+}
+
+async function saveInterviewToSupabase(payload, options = {}) {
+  if (!payload.markdown || typeof payload.markdown !== "string") {
+    throw Object.assign(new Error("ไม่พบเนื้อหา Markdown สำหรับบันทึก"), { status: 400 });
+  }
+
+  const now = options.now || new Date();
+  const id = options.id || crypto.randomUUID();
+  const respondentCode = safeSegment(payload.respondentCode);
+  const basename = `${timestampForFile(now)}-${respondentCode}-${id.slice(0, 8)}`;
+  const filename = `${basename}.md`;
+  const storagePath = `${monthFolder(now)}/${filename}`;
+  const answers = payload.answers || {};
+  const ai = payload.ai || {};
+
+  await uploadMarkdownToSupabase(storagePath, payload.markdown);
+
+  const record = {
+    id,
+    filename,
+    storage_bucket: SUPABASE_BUCKET,
+    storage_path: storagePath,
+    respondent_code: payload.respondentCode || "",
+    submitted_at: payload.submittedAt || now.toISOString(),
+    elapsed_ms: payload.elapsedMs || 0,
+    respondent: payload.respondent || {},
+    consent: payload.consent || {},
+    interviewer: payload.interviewer || "",
+    answers,
+    ai,
+    answer_count: Object.values(answers).filter(
+      (answer) => answer?.answer?.trim() || answer?.summary?.trim(),
+    ).length,
+    ai_message_count: ai?.messages?.length || 0,
+  };
+
+  await insertInterviewRecord(record);
+
+  return {
+    ok: true,
+    id,
+    filename,
+    path: `supabase://${SUPABASE_BUCKET}/${storagePath}`,
+    storageBucket: SUPABASE_BUCKET,
+    storagePath,
+  };
+}
+
 async function saveInterview(payload, options = {}) {
+  const shouldUseSupabase =
+    options.driver !== "local" &&
+    (SUPABASE_URL || SUPABASE_SERVICE_ROLE_KEY || process.env.VERCEL === "1");
+
+  if (shouldUseSupabase) {
+    return saveInterviewToSupabase(payload, options);
+  }
+
   if (!payload.markdown || typeof payload.markdown !== "string") {
     throw Object.assign(new Error("ไม่พบเนื้อหา Markdown สำหรับบันทึก"), { status: 400 });
   }
@@ -156,6 +295,8 @@ async function handleInterviewSubmit(req, res) {
       filename: saved.filename,
       path: saved.path,
       metadataPath: saved.metadataPath,
+      storageBucket: saved.storageBucket,
+      storagePath: saved.storagePath,
     });
   } catch (error) {
     sendJson(res, error.status || 500, {
@@ -467,7 +608,11 @@ if (require.main === module) {
     const address = server.address();
     const actualPort = typeof address === "object" && address ? address.port : PORT;
     console.log(`Interview Studio running at http://${HOST}:${actualPort}`);
-    console.log(`Saved interviews folder: ${DATA_DIR}`);
+    if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
+      console.log(`Saved interviews backend: Supabase bucket "${SUPABASE_BUCKET}"`);
+    } else {
+      console.log(`Saved interviews folder: ${DATA_DIR}`);
+    }
   });
 }
 
@@ -475,4 +620,8 @@ module.exports = {
   createServer,
   saveInterview,
   safeSegment,
+  sendJson,
+  handleInterviewSubmit,
+  handleChatFollowup,
+  handleChatExtract,
 };
