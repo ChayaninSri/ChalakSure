@@ -1318,6 +1318,81 @@ function aiOpeningText(question) {
   return `สวัสดีครับ/ค่ะ ผมจะช่วยสัมภาษณ์ตามแบบสัมภาษณ์เชิงลึกของงานวิจัยนี้ โดยจะถามทีละข้อและถามเจาะลึกเมื่อคำตอบยังไม่ชัดเจน ขอเริ่มที่ข้อ ${question.id.replace("q", "").replace("-", ".")} นะครับ/คะ: ${question.title}`;
 }
 
+function questionIntroText(question) {
+  return `ขอบคุณครับ/ค่ะ ต่อไปขอถามข้อ ${question.id.replace("q", "").replace("-", ".")}: ${question.title}`;
+}
+
+function clarifyQuestionText(question) {
+  const clarifications = {
+    "q2-1":
+      "ขออธิบายคำถามอีกครั้งนะครับ/คะ ข้อนี้อยากทราบว่าปกติท่านเริ่มทำฉลากจากตรงไหน ผ่านขั้นตอนอะไรบ้าง และใครเกี่ยวข้องในแต่ละขั้นครับ/คะ",
+    "q2-2":
+      "ขออธิบายคำถามอีกครั้งนะครับ/คะ ข้อนี้อยากให้เล่าปัญหาจริงที่เคยเจอในการทำฉลาก เช่น ผิดตรงไหน เกิดช่วงใด และส่งผลอย่างไรครับ/คะ",
+    "q2-3":
+      "ขออธิบายคำถามอีกครั้งนะครับ/คะ ข้อนี้อยากทราบว่ากฎระเบียบฉลาก โดยเฉพาะประกาศ 445 หรือ 450 มีส่วนไหนที่เข้าใจยาก ตีความยาก หรือติดตามยากครับ/คะ",
+    "q2-4":
+      "ขออธิบายคำถามอีกครั้งนะครับ/คะ ข้อนี้อยากทราบว่าก่อนส่งพิมพ์จริง ท่านตรวจฉลากอย่างไร เช่น ตรวจเอง ใช้ checklist ให้เพื่อนร่วมงานช่วยตรวจ หรือถามเจ้าหน้าที่ครับ/คะ",
+    "q3-1":
+      "ขออธิบายคำถามอีกครั้งนะครับ/คะ ข้อนี้อยากทราบว่าท่านอยากให้นวัตกรรมช่วยงานฉลากออกมาในรูปแบบใด เช่น เว็บแอป แอปมือถือ โปรแกรม คู่มือ หรือสื่อสอนครับ/คะ",
+    "q3-2":
+      "ขออธิบายคำถามอีกครั้งนะครับ/คะ ข้อนี้อยากทราบว่าถ้าระบบช่วยเรื่องฉลากได้ ท่านอยากให้ทำฟังก์ชันใดก่อนเป็นอันดับแรก และอยากให้ช่วยแก้ปัญหาอะไรครับ/คะ",
+    "q3-3":
+      "ขออธิบายคำถามอีกครั้งนะครับ/คะ ข้อนี้อยากทราบว่าถ้าระบบช่วยร่างข้อความบนฉลากอัตโนมัติ จะช่วยลดเวลา ลดความผิดพลาด หรือช่วยส่วนใดของงานได้บ้างครับ/คะ",
+    "q3-4":
+      "ขออธิบายคำถามอีกครั้งนะครับ/คะ ข้อนี้อยากทราบว่าท่านสะดวกใช้งานเครื่องมือตรวจฉลากผ่านอุปกรณ์ใด และมีข้อจำกัดเรื่องอินเทอร์เน็ตหรือความเร็วไหมครับ/คะ",
+    "q3-5":
+      "ขออธิบายคำถามอีกครั้งนะครับ/คะ ข้อนี้อยากทราบว่าถ้า AI ถ่ายรูปฉลากแล้วแจ้งข้อผิดพลาดพร้อมอ้างอิงกฎหมายได้ จะเปลี่ยนวิธีทำงานของท่านอย่างไร และท่านมั่นใจแค่ไหนครับ/คะ",
+    "q3-6":
+      "ขออธิบายคำถามอีกครั้งนะครับ/คะ ข้อนี้อยากให้เลือกปัญหาหรือความต้องการที่อยากให้แอปช่วยแก้มากที่สุด และช่วยจัดอันดับสาเหตุหลักที่ทำให้ฉลากไม่ถูกต้องครับ/คะ",
+  };
+
+  return clarifications[question.id] || `ขออธิบายคำถามอีกครั้งนะครับ/คะ ${question.title}`;
+}
+
+function compactThaiText(text) {
+  return String(text || "").toLowerCase().replace(/\s+/g, "");
+}
+
+function isClarificationRequest(text) {
+  const compact = compactThaiText(text);
+  if (!compact) return false;
+  const exactPhrases = [
+    "อะไรคะ",
+    "อะไรค่ะ",
+    "อะไรครับ",
+    "คำถามคืออะไร",
+    "คำถามคืออ่ะไร",
+    "ถามอะไร",
+    "เล่าอะไร",
+    "หมายถึงอะไร",
+    "ไม่เข้าใจ",
+    "ยังไงคะ",
+    "ยังไงค่ะ",
+    "ยังไงครับ",
+  ];
+  if (exactPhrases.includes(compact)) return true;
+
+  return ["คำถามคือ", "ถามว่าอะไร", "ถามเรื่องอะไร", "เล่าอะไร", "หมายถึงอะไร"].some((phrase) =>
+    compact.includes(phrase),
+  );
+}
+
+function isAcknowledgementOnly(text) {
+  const compact = compactThaiText(text);
+  return ["ค่ะ", "คะ", "ครับ", "โอเค", "ได้ค่ะ", "ได้ครับ", "รับทราบ"].includes(compact);
+}
+
+function isNonAnswerText(text) {
+  return isClarificationRequest(text) || isAcknowledgementOnly(text);
+}
+
+function wantsToStopCurrentQuestion(text) {
+  const compact = compactThaiText(text);
+  return ["ไม่มี", "ไม่มีค่ะ", "ไม่มีครับ", "ไม่มีแล้ว", "ข้าม", "พอแล้ว", "ไม่ทราบ", "นึกไม่ออก"].some(
+    (phrase) => compact.includes(phrase),
+  );
+}
+
 function startAIInterview(forceNew = false) {
   if (!hasInterviewConsent()) {
     showConsentRequired();
@@ -1405,31 +1480,22 @@ function coverageFor(questionId, answer) {
   return { plan, covered, missing: plan.filter((item) => !covered.includes(item)) };
 }
 
-function answerExcerpt(text) {
-  const cleaned = text.replace(/\s+/g, " ").trim();
-  if (!cleaned) return "";
-  return cleaned.length > 86 ? `${cleaned.slice(0, 86)}...` : cleaned;
-}
-
 function buildAdaptiveFollowup(question, answer, mode = "auto") {
   const coverage = coverageFor(question.id, answer);
   const asked = new Set(answer.aiFollowups || []);
   const missing = coverage.missing.find((item) => !asked.has(item.id));
-  const excerpt = answerExcerpt(answer.answer);
 
-  if (!answer.answer.trim() || answer.answer.trim().length < 36) {
+  if (missing) {
     return {
-      id: "concrete-example",
-      text:
-        "ช่วยเล่าเป็นเหตุการณ์จริงหรือสถานการณ์ที่เคยเจอสักตัวอย่างได้ไหมครับ/คะ เพื่อให้เข้าใจบริบทมากขึ้น?",
+      id: missing.id,
+      text: missing.followup,
     };
   }
 
-  if (missing) {
-    const prefix = excerpt ? `จากที่เล่าว่า “${excerpt}” ` : "";
+  if (!answer.answer.trim() || answer.answer.trim().length < 36) {
     return {
-      id: missing.id,
-      text: `${prefix}${missing.followup}`,
+      id: "clarify-main-question",
+      text: clarifyQuestionText(question),
     };
   }
 
@@ -1461,6 +1527,31 @@ function shouldAskAnotherFollowup(question, answer, latestText) {
   if (!enoughText && askedCount < 1) return true;
   if (!enoughCoverage && askedCount < 2) return true;
   return false;
+}
+
+function requiredCoverageCount(questionId, planLength) {
+  const requirements = {
+    "q2-1": 3,
+    "q2-2": 3,
+    "q2-3": 3,
+    "q2-4": 3,
+    "q3-6": 3,
+  };
+
+  return Math.min(requirements[questionId] || 2, planLength);
+}
+
+function shouldAcceptAIMoveToNext(question, answer, latestText) {
+  if (wantsToStopCurrentQuestion(latestText)) return true;
+
+  const coverage = coverageFor(question.id, answer);
+  if (!coverage.plan.length) return answer.answer.trim().length >= 48;
+
+  const required = requiredCoverageCount(question.id, coverage.plan.length);
+  const enoughCoverage = coverage.covered.length >= required;
+  const enoughDetail = answer.answer.replace(/\s+/g, "").length >= 64;
+
+  return enoughCoverage && enoughDetail;
 }
 
 function askAIProbe() {
@@ -1537,7 +1628,7 @@ function moveAINext(addMessage = true) {
   if (addMessage) {
     addAIMessage(
       "assistant",
-      `ขอบคุณครับ/ค่ะ ต่อไปขอถามข้อ ${nextQuestion.id.replace("q", "").replace("-", ".")}: ${nextQuestion.title}`,
+      questionIntroText(nextQuestion),
       nextQuestion.id,
     );
   }
@@ -1568,6 +1659,14 @@ function sendChatMessage() {
 
   const question = aiCurrentQuestion();
   addAIMessage("user", text, question.id);
+
+  if (isNonAnswerText(text)) {
+    addAIMessage("assistant", clarifyQuestionText(question), question.id);
+    saveState();
+    render();
+    return;
+  }
+
   appendAnswerFromChat(question.id, text);
 
   state.ai.isTyping = true;
@@ -1589,6 +1688,21 @@ function sendChatMessage() {
   .then(data => {
     state.ai.isTyping = false;
     if (data.shouldMoveToNext) {
+      if (!shouldAcceptAIMoveToNext(question, answerFor(question.id), text)) {
+        const followup = buildAdaptiveFollowup(question, answerFor(question.id));
+        if (followup) {
+          recordFollowup(answerFor(question.id), followup.id);
+          addAIMessage("assistant", followup.text, question.id);
+        } else if (data.response) {
+          addAIMessage("assistant", data.response, question.id);
+        } else {
+          addAIMessage("assistant", clarifyQuestionText(question), question.id);
+        }
+        saveState();
+        render();
+        return;
+      }
+
       if (data.response) {
         addAIMessage("assistant", data.response, question.id);
       }
@@ -1610,15 +1724,7 @@ function sendChatMessage() {
         const nextQuestion = guide[idx + 1];
         state.ai.currentId = nextQuestion.id;
         state.currentId = nextQuestion.id;
-        if (data.response) {
-          addAIMessage("assistant", data.response, nextQuestion.id);
-        } else {
-          addAIMessage(
-            "assistant",
-            `ขอบคุณครับ/ค่ะ ต่อไปขอถามข้อ ${nextQuestion.id.replace("q", "").replace("-", ".")}: ${nextQuestion.title}`,
-            nextQuestion.id,
-          );
-        }
+        addAIMessage("assistant", questionIntroText(nextQuestion), nextQuestion.id);
         saveState();
         render();
       }
@@ -1626,7 +1732,13 @@ function sendChatMessage() {
       if (data.response) {
         addAIMessage("assistant", data.response, question.id);
       } else {
-        addAIMessage("assistant", "ช่วยเล่ารายละเอียดเพิ่มเติมในประเด็นนี้หน่อยได้ไหมครับ/คะ?", question.id);
+        const followup = buildAdaptiveFollowup(question, answerFor(question.id));
+        if (followup) {
+          recordFollowup(answerFor(question.id), followup.id);
+          addAIMessage("assistant", followup.text, question.id);
+        } else {
+          addAIMessage("assistant", clarifyQuestionText(question), question.id);
+        }
       }
       saveState();
       render();
