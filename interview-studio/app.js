@@ -484,6 +484,7 @@ const participantNotice = [
 ];
 
 const businessTypeOptions = ["", "วิสาหกิจชุมชน / OTOP", "SME", "นิติบุคคล", "อื่น ๆ"];
+const licenseOptions = ["", "ผลิต (เข้าข่ายโรงงาน อ.2)", "ผลิต (ไม่เข้าข่ายโรงงาน สบ.1)", "นำเข้า (อ.7)"];
 const respondentMethodOptions = [
   "ออกแบบและทำเองทั้งหมด",
   "จ้างร้านกราฟิกออกแบบ",
@@ -493,10 +494,10 @@ const respondentMethodOptions = [
 const requiredRespondentFields = [
   ["code", "รหัส"],
   ["license", "ประเภทใบอนุญาต"],
-  ["duration", "ระยะเวลากิจการ"],
-  ["foodType", "ประเภทอาหารหลัก"],
-  ["productCount", "จำนวนฉลาก"],
-  ["role", "ตำแหน่งผู้รับผิดชอบ"],
+  ["duration", "ระยะเวลาดำเนินกิจการ (ปี)"],
+  ["foodType", "ประเภทอาหารที่ผลิตหลัก"],
+  ["productCount", "จำนวนฉลากผลิตภัณฑ์ที่เคยจัดทำ"],
+  ["role", "ตำแหน่งผู้ตอบแบบสอบถาม"],
   ["businessType", "ประเภทกิจการ"],
 ];
 
@@ -731,6 +732,9 @@ function render() {
   const consentReady = hasInterviewConsent();
   const respondentReady = hasRespondentProfile();
   const interviewReady = consentReady && respondentReady;
+  const touchUi =
+    window.matchMedia?.("(pointer: coarse)").matches ||
+    navigator.maxTouchPoints > 0;
   const mainView = !consentReady
     ? renderConsentGate()
     : !respondentReady
@@ -740,7 +744,7 @@ function render() {
         : renderQuestion(question, answer);
 
   app.innerHTML = `
-    <div class="app-shell ${interviewReady ? "" : "setup-mode"} ${consentReady ? "" : "consent-mode"}">
+    <div class="app-shell ${touchUi ? "touch-ui" : ""} ${interviewReady ? "" : "setup-mode"} ${consentReady ? "" : "consent-mode"}">
       ${renderTopbar(stats)}
       <main class="layout ${state.view === "ai" ? "ai-layout" : ""} ${interviewReady ? "" : "setup-layout"} ${consentReady ? "" : "consent-layout"}">
         ${interviewReady ? renderSidebar(stats) : ""}
@@ -1175,12 +1179,12 @@ function renderRespondentFields() {
   const r = state.respondent;
   return `
     <div class="form-grid respondent-form-grid">
-      ${renderInput("code", "รหัส *", r.code)}
-      ${renderInput("license", "ประเภทใบอนุญาต *", r.license)}
-      ${renderInput("duration", "ระยะเวลากิจการ *", r.duration)}
-      ${renderInput("foodType", "ประเภทอาหารหลัก *", r.foodType)}
-      ${renderInput("productCount", "จำนวนฉลาก *", r.productCount)}
-      ${renderInput("role", "ตำแหน่งผู้รับผิดชอบ *", r.role)}
+      ${renderInput("code", "รหัส *", r.code, "", "", "ตามที่ผู้วิจัยได้แจงให้ท่านทราบ")}
+      ${renderSelect("license", "ประเภทใบอนุญาต *", r.license, licenseOptions)}
+      ${renderInput("duration", "ระยะเวลาดำเนินกิจการ (ปี) *", r.duration)}
+      ${renderInput("foodType", "ประเภทอาหารที่ผลิตหลัก *", r.foodType, "", "เช่น ขนม เครื่องดื่ม อาหารพร้อมทาน", "มีได้มากกว่า 1 อย่าง")}
+      ${renderInput("productCount", "จำนวนฉลากผลิตภัณฑ์ที่เคยจัดทำ *", r.productCount)}
+      ${renderInput("role", "ตำแหน่งผู้ตอบแบบสอบถาม *", r.role, "", "เช่น หัวหน้าแผนกประกันคุณภาพ")}
       <div class="field wide">
         <label for="businessType">ประเภทกิจการ *</label>
         <select id="businessType" class="select" data-respondent="businessType">
@@ -1200,11 +1204,26 @@ function renderRespondentFields() {
   `;
 }
 
-function renderInput(key, label, value, className = "") {
+function renderInput(key, label, value, className = "", placeholder = "", helper = "") {
   return `
     <div class="field ${className}">
       <label for="${key}">${label}</label>
-      <input id="${key}" class="input" data-respondent="${key}" value="${escapeHtml(value)}" />
+      <input id="${key}" class="input" data-respondent="${key}" value="${escapeHtml(value)}" placeholder="${escapeHtml(placeholder)}" />
+      ${helper ? `<p class="field-help">${escapeHtml(helper)}</p>` : ""}
+    </div>
+  `;
+}
+
+function renderSelect(key, label, value, options, className = "", helper = "") {
+  return `
+    <div class="field ${className}">
+      <label for="${key}">${label}</label>
+      <select id="${key}" class="select" data-respondent="${key}">
+        ${options
+          .map((option) => `<option value="${escapeHtml(option)}" ${value === option ? "selected" : ""}>${option || "เลือกประเภทใบอนุญาต"}</option>`)
+          .join("")}
+      </select>
+      ${helper ? `<p class="field-help">${escapeHtml(helper)}</p>` : ""}
     </div>
   `;
 }
