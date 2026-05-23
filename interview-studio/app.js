@@ -483,6 +483,23 @@ const participantNotice = [
   },
 ];
 
+const businessTypeOptions = ["", "วิสาหกิจชุมชน / OTOP", "SME", "นิติบุคคล", "อื่น ๆ"];
+const respondentMethodOptions = [
+  "ออกแบบและทำเองทั้งหมด",
+  "จ้างร้านกราฟิกออกแบบ",
+  "จ้างโรงงาน OEM จัดทำให้",
+  "ใช้ซอฟต์แวร์/เครื่องมือออนไลน์ช่วย",
+];
+const requiredRespondentFields = [
+  ["code", "รหัส"],
+  ["license", "ประเภทใบอนุญาต"],
+  ["duration", "ระยะเวลากิจการ"],
+  ["foodType", "ประเภทอาหารหลัก"],
+  ["productCount", "จำนวนฉลาก"],
+  ["role", "ตำแหน่งผู้รับผิดชอบ"],
+  ["businessType", "ประเภทกิจการ"],
+];
+
 const blankState = {
   view: "manual",
   currentId: "q2-1",
@@ -577,6 +594,7 @@ function normalizeState(source) {
   Object.assign(next, source || {});
   next.view = ["manual", "ai"].includes(source?.view) ? source.view : "manual";
   next.respondent = { ...blankState.respondent, ...(source?.respondent || {}) };
+  if (!Array.isArray(next.respondent.methods)) next.respondent.methods = [];
   next.consent = { ...blankState.consent, ...(source?.consent || {}) };
   next.timer = { ...blankState.timer, ...(source?.timer || {}) };
   next.ai = { ...blankState.ai, ...(source?.ai || {}) };
@@ -645,6 +663,22 @@ function hasInterviewConsent() {
   );
 }
 
+function missingRespondentFields() {
+  const missing = requiredRespondentFields
+    .filter(([key]) => !String(state.respondent[key] || "").trim())
+    .map(([, label]) => label);
+
+  if (!state.respondent.methods.length) {
+    missing.push("วิธีจัดทำฉลาก");
+  }
+
+  return missing;
+}
+
+function hasRespondentProfile() {
+  return missingRespondentFields().length === 0;
+}
+
 function markConsentAccepted() {
   state.consent.informed = true;
   state.consent.participation = true;
@@ -657,6 +691,12 @@ function markConsentAccepted() {
 
 function showConsentRequired() {
   showToast("กรุณาแจ้งข้อมูลการวิจัยและบันทึกความยินยอมก่อนเริ่มสัมภาษณ์");
+}
+
+function showRespondentRequired() {
+  const missing = missingRespondentFields();
+  const sample = missing.slice(0, 3).join(", ");
+  showToast(`กรุณากรอกข้อมูลผู้ให้สัมภาษณ์ให้ครบก่อนเริ่ม: ${sample}${missing.length > 3 ? "..." : ""}`);
 }
 
 function elapsedMs() {
@@ -689,19 +729,23 @@ function render() {
   const stats = progress();
   const app = document.querySelector("#app");
   const consentReady = hasInterviewConsent();
-  const mainView = consentReady
-    ? state.view === "ai"
-      ? renderAIInterview(stats)
-      : renderQuestion(question, answer)
-    : renderConsentGate();
+  const respondentReady = hasRespondentProfile();
+  const interviewReady = consentReady && respondentReady;
+  const mainView = !consentReady
+    ? renderConsentGate()
+    : !respondentReady
+      ? renderRespondentGate()
+      : state.view === "ai"
+        ? renderAIInterview(stats)
+        : renderQuestion(question, answer);
 
   app.innerHTML = `
-    <div class="app-shell ${consentReady ? "" : "consent-mode"}">
+    <div class="app-shell ${interviewReady ? "" : "setup-mode"} ${consentReady ? "" : "consent-mode"}">
       ${renderTopbar(stats)}
-      <main class="layout ${state.view === "ai" ? "ai-layout" : ""} ${consentReady ? "" : "consent-layout"}">
-        ${consentReady ? renderSidebar(stats) : renderConsentSidebar(stats)}
+      <main class="layout ${state.view === "ai" ? "ai-layout" : ""} ${interviewReady ? "" : "setup-layout"} ${consentReady ? "" : "consent-layout"}">
+        ${interviewReady ? renderSidebar(stats) : ""}
         ${mainView}
-        ${renderInspector(stats)}
+        ${interviewReady ? renderInspector(stats) : ""}
       </main>
       <div id="toast" class="toast" role="status" aria-live="polite"></div>
     </div>
@@ -796,8 +840,38 @@ function renderConsentGate() {
           ${renderToggle("audio", "ยินยอมให้บันทึกเสียงหรือถอดคำพูดเพื่อความถูกต้องของข้อมูล (เลือกได้)")}
           <div class="consent-actions">
             <button class="button" data-action="decline-consent">${icon("pause")}<span>ยังไม่ยินยอม</span></button>
-            <button class="button accent" data-action="accept-consent">${icon("check")}<span>ยินยอม เริ่มสัมภาษณ์</span></button>
+            <button class="button accent" data-action="accept-consent">${icon("check")}<span>ยินยอม ไปกรอกข้อมูล</span></button>
           </div>
+        </div>
+      </article>
+    </section>
+  `;
+}
+
+function renderRespondentGate() {
+  return `
+    <section class="workspace setup-workspace respondent-workspace">
+      <article class="panel respondent-gate">
+        <div class="consent-hero">
+          <div class="brand-mark">${icon("user")}</div>
+          <div>
+            <p class="section-kicker">ก่อนเริ่มสัมภาษณ์</p>
+            <h2 class="question-title">ข้อมูลผู้ให้สัมภาษณ์</h2>
+            <p class="consent-intro">
+              กรุณากรอกข้อมูลพื้นฐานให้ครบก่อนเริ่มสัมภาษณ์ ระบบจะใช้ข้อมูลนี้ประกอบการบันทึกและส่งออกผลสัมภาษณ์
+            </p>
+          </div>
+        </div>
+
+        <div class="respondent-required-note">
+          <p>ต้องกรอกทุกช่องหลัก และเลือกวิธีจัดทำฉลากอย่างน้อย 1 วิธี จึงจะเริ่มสัมภาษณ์ได้</p>
+        </div>
+
+        ${renderRespondentFields()}
+
+        <div class="consent-actions">
+          <button class="button soft" data-action="save">${icon("save")}<span>บันทึกร่าง</span></button>
+          <button class="button accent" data-action="confirm-respondent">${icon("check")}<span>เริ่มสัมภาษณ์</span></button>
         </div>
       </article>
     </section>
@@ -1063,7 +1137,6 @@ function renderChatMessages() {
 }
 
 function renderInspector(stats) {
-  const r = state.respondent;
   return `
     <aside class="inspector">
       <section class="timer-card">
@@ -1082,29 +1155,7 @@ function renderInspector(stats) {
           <h2>ข้อมูลผู้ให้สัมภาษณ์</h2>
           ${icon("user")}
         </div>
-        <div class="form-grid">
-          ${renderInput("code", "รหัส", r.code)}
-          ${renderInput("license", "ประเภทใบอนุญาต", r.license)}
-          ${renderInput("duration", "ระยะเวลากิจการ", r.duration)}
-          ${renderInput("foodType", "ประเภทอาหารหลัก", r.foodType)}
-          ${renderInput("productCount", "จำนวนฉลาก", r.productCount)}
-          ${renderInput("role", "ตำแหน่งผู้รับผิดชอบ", r.role)}
-          <div class="field wide">
-            <label for="businessType">ประเภทกิจการ</label>
-            <select id="businessType" class="select" data-respondent="businessType">
-              ${["", "วิสาหกิจชุมชน / OTOP", "SME", "นิติบุคคล", "อื่น ๆ"]
-                .map((option) => `<option value="${escapeHtml(option)}" ${r.businessType === option ? "selected" : ""}>${option || "เลือกประเภทกิจการ"}</option>`)
-                .join("")}
-            </select>
-          </div>
-          <div class="field wide">
-            <span class="field-label">วิธีจัดทำฉลาก</span>
-            ${["ออกแบบและทำเองทั้งหมด", "จ้างร้านกราฟิกออกแบบ", "จ้างโรงงาน OEM จัดทำให้", "ใช้ซอฟต์แวร์/เครื่องมือออนไลน์ช่วย"]
-              .map((method) => renderMethod(method))
-              .join("")}
-          </div>
-          ${renderInput("methodOther", "ระบุเพิ่มเติม", r.methodOther, "wide")}
-        </div>
+        ${renderRespondentFields()}
       </section>
 
       <section class="panel side-panel">
@@ -1117,6 +1168,35 @@ function renderInspector(stats) {
         </div>
       </section>
     </aside>
+  `;
+}
+
+function renderRespondentFields() {
+  const r = state.respondent;
+  return `
+    <div class="form-grid respondent-form-grid">
+      ${renderInput("code", "รหัส *", r.code)}
+      ${renderInput("license", "ประเภทใบอนุญาต *", r.license)}
+      ${renderInput("duration", "ระยะเวลากิจการ *", r.duration)}
+      ${renderInput("foodType", "ประเภทอาหารหลัก *", r.foodType)}
+      ${renderInput("productCount", "จำนวนฉลาก *", r.productCount)}
+      ${renderInput("role", "ตำแหน่งผู้รับผิดชอบ *", r.role)}
+      <div class="field wide">
+        <label for="businessType">ประเภทกิจการ *</label>
+        <select id="businessType" class="select" data-respondent="businessType">
+          ${businessTypeOptions
+            .map((option) => `<option value="${escapeHtml(option)}" ${r.businessType === option ? "selected" : ""}>${option || "เลือกประเภทกิจการ"}</option>`)
+            .join("")}
+        </select>
+      </div>
+      <div class="field wide">
+        <span class="field-label">วิธีจัดทำฉลาก *</span>
+        ${respondentMethodOptions
+          .map((method) => renderMethod(method))
+          .join("")}
+      </div>
+      ${renderInput("methodOther", "ระบุเพิ่มเติม", r.methodOther, "wide")}
+    </div>
   `;
 }
 
@@ -1209,6 +1289,10 @@ function aiOpeningText(question) {
 function startAIInterview(forceNew = false) {
   if (!hasInterviewConsent()) {
     showConsentRequired();
+    return;
+  }
+  if (!hasRespondentProfile()) {
+    showRespondentRequired();
     return;
   }
 
@@ -1434,6 +1518,10 @@ function sendChatMessage() {
     showConsentRequired();
     return;
   }
+  if (!hasRespondentProfile()) {
+    showRespondentRequired();
+    return;
+  }
 
   const input = document.querySelector("[data-chat-input]");
   const text = input?.value.trim();
@@ -1623,6 +1711,10 @@ function startTimer() {
     showConsentRequired();
     return;
   }
+  if (!hasRespondentProfile()) {
+    showRespondentRequired();
+    return;
+  }
 
   if (!state.timer.running) {
     state.timer.running = true;
@@ -1645,8 +1737,8 @@ function pauseTimer() {
 function acceptConsent() {
   markConsentAccepted();
   saveState();
-  startTimer();
-  showToast("บันทึกความยินยอมแล้ว เริ่มสัมภาษณ์ได้");
+  render();
+  showToast("บันทึกความยินยอมแล้ว กรุณากรอกข้อมูลผู้ให้สัมภาษณ์ก่อนเริ่ม");
 }
 
 function declineConsent() {
@@ -1795,6 +1887,10 @@ async function submitInterview() {
     showConsentRequired();
     return;
   }
+  if (!hasRespondentProfile()) {
+    showRespondentRequired();
+    return;
+  }
 
   const payload = buildSubmissionPayload();
   const isStaticGithubPages = window.location.hostname.endsWith("github.io");
@@ -1905,6 +2001,7 @@ document.addEventListener("click", (event) => {
 
   const action = button.dataset.action;
   const consentGuardedActions = new Set([
+    "set-view",
     "start-timer",
     "start-ai",
     "ask-ai-probe",
@@ -1926,8 +2023,31 @@ document.addEventListener("click", (event) => {
     return;
   }
 
+  if (action === "confirm-respondent") {
+    if (!hasInterviewConsent()) {
+      showConsentRequired();
+      return;
+    }
+    if (!hasRespondentProfile()) {
+      showRespondentRequired();
+      return;
+    }
+    saveState();
+    if (state.timer.running) {
+      render();
+    } else {
+      startTimer();
+    }
+    showToast("บันทึกข้อมูลผู้ให้สัมภาษณ์แล้ว เริ่มสัมภาษณ์ได้");
+    return;
+  }
+
   if (consentGuardedActions.has(action) && !hasInterviewConsent()) {
     showConsentRequired();
+    return;
+  }
+  if (consentGuardedActions.has(action) && !hasRespondentProfile()) {
+    showRespondentRequired();
     return;
   }
 
@@ -2015,6 +2135,10 @@ document.addEventListener("input", (event) => {
 
 document.addEventListener("change", (event) => {
   const target = event.target;
+  if (target.matches("[data-respondent]")) {
+    state.respondent[target.dataset.respondent] = target.value;
+    saveState();
+  }
   if (target.matches("[data-consent]")) {
     const key = target.dataset.consent;
     state.consent[key] = target.checked;
