@@ -502,7 +502,7 @@ const requiredRespondentFields = [
 ];
 
 const blankState = {
-  view: "manual",
+  view: "ai",
   currentId: "q2-1",
   respondent: {
     code: "",
@@ -544,6 +544,10 @@ const blankState = {
 
 let state = loadState();
 let toastTimer = null;
+
+if ("scrollRestoration" in history) {
+  history.scrollRestoration = "manual";
+}
 
 function icon(name) {
   const icons = {
@@ -593,7 +597,7 @@ function loadState() {
 function normalizeState(source) {
   const next = structuredClone(blankState);
   Object.assign(next, source || {});
-  next.view = ["manual", "ai"].includes(source?.view) ? source.view : "manual";
+  next.view = "ai";
   next.respondent = { ...blankState.respondent, ...(source?.respondent || {}) };
   if (!Array.isArray(next.respondent.methods)) next.respondent.methods = [];
   next.consent = { ...blankState.consent, ...(source?.consent || {}) };
@@ -724,6 +728,12 @@ function escapeHtml(value) {
     .replaceAll("'", "&#039;");
 }
 
+function scrollToPageTop() {
+  requestAnimationFrame(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  });
+}
+
 function render() {
   const question = currentQuestion();
   const answer = answerFor(question.id);
@@ -779,10 +789,7 @@ function renderTopbar(stats) {
         </div>
       </div>
       <div class="top-actions">
-        <div class="mode-switch" role="tablist" aria-label="โหมดสัมภาษณ์">
-          <button class="mode-tab ${state.view === "manual" ? "active" : ""}" data-action="set-view" data-view="manual">ผู้สัมภาษณ์กรอกเอง</button>
-          <button class="mode-tab ${state.view === "ai" ? "active" : ""}" data-action="set-view" data-view="ai">AI สัมภาษณ์ผ่านแชท</button>
-        </div>
+        <span class="status-chip good">AI สัมภาษณ์</span>
         <span class="status-chip ${stats.done ? "good" : ""}">${stats.done}/${stats.total} คำถาม</span>
         <button class="button accent" data-action="${timerAction}">${icon(state.timer.running ? "pause" : "play")}<span>${state.timer.running ? "หยุด" : "เริ่ม"}</span></button>
         <button class="button soft" data-action="save">${icon("save")}<span>บันทึกร่าง</span></button>
@@ -1755,8 +1762,10 @@ function pauseTimer() {
 
 function acceptConsent() {
   markConsentAccepted();
+  state.view = "ai";
   saveState();
   render();
+  scrollToPageTop();
   showToast("บันทึกความยินยอมแล้ว กรุณากรอกข้อมูลผู้ให้สัมภาษณ์ก่อนเริ่ม");
 }
 
@@ -2051,12 +2060,15 @@ document.addEventListener("click", (event) => {
       showRespondentRequired();
       return;
     }
+    state.view = "ai";
+    state.currentId = state.ai.currentId;
     saveState();
     if (state.timer.running) {
       render();
     } else {
       startTimer();
     }
+    scrollToPageTop();
     showToast("บันทึกข้อมูลผู้ให้สัมภาษณ์แล้ว เริ่มสัมภาษณ์ได้");
     return;
   }
@@ -2212,3 +2224,4 @@ document.addEventListener("keydown", (event) => {
 
 setInterval(refreshTimer, 1000);
 render();
+scrollToPageTop();
