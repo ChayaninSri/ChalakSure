@@ -696,7 +696,7 @@ function render() {
     : renderConsentGate();
 
   app.innerHTML = `
-    <div class="app-shell">
+    <div class="app-shell ${consentReady ? "" : "consent-mode"}">
       ${renderTopbar(stats)}
       <main class="layout ${state.view === "ai" ? "ai-layout" : ""} ${consentReady ? "" : "consent-layout"}">
         ${consentReady ? renderSidebar(stats) : renderConsentSidebar(stats)}
