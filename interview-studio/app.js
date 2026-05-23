@@ -794,7 +794,8 @@ function renderTopbar(stats) {
         <button class="button accent" data-action="${timerAction}">${icon(state.timer.running ? "pause" : "play")}<span>${state.timer.running ? "หยุด" : "เริ่ม"}</span></button>
         <button class="button soft" data-action="save">${icon("save")}<span>บันทึกร่าง</span></button>
         <button class="button warning" data-action="reset">${icon("trash")}<span>ล้างข้อมูล</span></button>
-        <button class="button primary" data-action="submit">${icon("send")}<span>ส่งข้อมูล</span></button>
+        <button class="button warning" data-action="finish-ai" ${!state.ai.started && !state.ai.messages.length ? "disabled" : ""}>${icon("check")}<span>ยุติการสัมภาษณ์</span></button>
+        <button class="button primary" data-action="submit">${icon("send")}<span>ส่งข้อมูลเมื่อครบถ้วน</span></button>
       </div>
     </header>
   `;
@@ -1063,20 +1064,23 @@ function renderAIInterview(stats) {
         </div>
 
         <div class="chat-compose">
-          <textarea class="chat-input" data-chat-input placeholder="พิมพ์คำตอบของผู้ให้สัมภาษณ์ หรือถอดคำพูดจากการสนทนา... (หรือใช้ฟังก์ชันพูดแทนการพิมพ์)"></textarea>
+          <div class="chat-input-shell">
+            <textarea class="chat-input" data-chat-input placeholder="พิมพ์คำตอบของผู้ให้สัมภาษณ์ หรือถอดคำพูดจากการสนทนา..."></textarea>
+            <div class="chat-input-tools">
+              <button class="chat-icon-button" data-action="toggle-mic" aria-label="พูดตอบ" title="พูดตอบ">
+                ${icon("mic")}
+                <span class="sr-only">พูดตอบ</span>
+              </button>
+              <button class="chat-icon-button primary" data-action="send-chat" aria-label="ส่งคำตอบ" title="ส่งคำตอบ">
+                ${icon("send")}
+                <span class="sr-only">ส่งคำตอบ</span>
+              </button>
+            </div>
+          </div>
           <div class="chat-actions">
             <div class="toolbar-group">
-              <button class="button accent" data-action="start-ai">${icon("message")}<span>${state.ai.started ? "ช่วงใหม่" : "เริ่ม AI"}</span></button>
+              ${!state.ai.started && !state.ai.messages.length ? `<button class="button accent" data-action="start-ai">${icon("message")}<span>เริ่มสัมภาษณ์</span></button>` : ""}
               <button class="button soft" data-action="ai-next">${icon("arrowRight")}<span>คำถามถัดไป</span></button>
-              <button class="button warning" data-action="finish-ai">${icon("check")}<span>จบสัมภาษณ์</span></button>
-              <button class="button soft" data-action="extract-ai">${icon("spark")}<span>ดึงข้อมูล</span></button>
-            </div>
-            <div class="toolbar-group">
-              <button class="button soft" data-action="toggle-mic">
-                ${icon("mic")}
-                <span>พูดตอบ</span>
-              </button>
-              <button class="button primary" data-action="send-chat">${icon("send")}<span>ส่งคำตอบ</span></button>
             </div>
           </div>
         </div>

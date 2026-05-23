@@ -896,11 +896,16 @@ button {
   background: var(--paper-soft);
 }
 
+.chat-input-shell {
+  position: relative;
+  display: grid;
+}
+
 .chat-input {
   width: 100%;
   min-height: 82px;
   resize: vertical;
-  padding: 12px;
+  padding: 12px 96px 12px 12px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: #ffffff;
@@ -912,6 +917,47 @@ button {
 .chat-input:focus {
   border-color: var(--mint);
   box-shadow: 0 0 0 3px rgba(15, 138, 112, 0.12);
+}
+
+.chat-input-tools {
+  position: absolute;
+  right: 9px;
+  bottom: 9px;
+  display: flex;
+  gap: 7px;
+}
+
+.chat-icon-button {
+  width: 36px;
+  height: 36px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  color: var(--mint);
+  background: var(--mint-soft);
+  cursor: pointer;
+}
+
+.chat-icon-button.primary {
+  color: #ffffff;
+  background: var(--slate);
+  border-color: var(--slate);
+}
+
+.chat-icon-button.warning {
+  color: var(--coral);
+  background: var(--coral-soft);
+  border-color: #ffd7ca;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
 }
 
 .chat-actions {
@@ -1314,6 +1360,11 @@ button {
     min-width: 0;
     min-height: 42px;
   }
+
+  .app-shell:not(.setup-mode) .top-actions > .button.primary,
+  .touch-ui:not(.setup-mode) .top-actions > .button.primary {
+    grid-column: 1 / -1;
+  }
 }
 
 .touch-ui:not(.setup-mode) {
@@ -1369,6 +1420,10 @@ button {
   width: 100%;
   min-width: 0;
   min-height: 42px;
+}
+
+.touch-ui:not(.setup-mode) .top-actions > .button.primary {
+  grid-column: 1 / -1;
 }
 
 .touch-ui:not(.setup-mode) .layout {
