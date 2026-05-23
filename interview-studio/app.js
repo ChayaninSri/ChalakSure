@@ -565,6 +565,8 @@ function icon(name) {
       '<path d="M10 4H6v16h4V4Z"></path><path d="M18 4h-4v16h4V4Z"></path>',
     play:
       '<path d="m5 3 14 9-14 9V3Z"></path>',
+    stop:
+      '<rect x="6" y="6" width="12" height="12" rx="2"></rect>',
     save:
       '<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"></path><path d="M17 21v-8H7v8"></path><path d="M7 3v5h8"></path>',
     spark:
@@ -794,7 +796,7 @@ function renderTopbar(stats) {
         <button class="button accent" data-action="${timerAction}">${icon(state.timer.running ? "pause" : "play")}<span>${state.timer.running ? "หยุด" : "เริ่ม"}</span></button>
         <button class="button soft" data-action="save">${icon("save")}<span>บันทึกร่าง</span></button>
         <button class="button warning" data-action="reset">${icon("trash")}<span>ล้างข้อมูล</span></button>
-        <button class="button warning" data-action="finish-ai" ${!state.ai.started && !state.ai.messages.length ? "disabled" : ""}>${icon("check")}<span>ยุติการสัมภาษณ์</span></button>
+        <button class="button danger" data-action="finish-ai" ${!state.ai.started && !state.ai.messages.length ? "disabled" : ""}>${icon("stop")}<span>ยุติการสัมภาษณ์</span></button>
         <button class="button primary" data-action="submit">${icon("send")}<span>ส่งข้อมูลเมื่อครบถ้วน</span></button>
       </div>
     </header>

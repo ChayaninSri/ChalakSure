@@ -231,6 +231,12 @@ button {
   border-color: #ffd7ca;
 }
 
+.button.danger {
+  background: #c9342c;
+  color: #ffffff;
+  border-color: #c9342c;
+}
+
 .icon {
   width: 16px;
   height: 16px;
