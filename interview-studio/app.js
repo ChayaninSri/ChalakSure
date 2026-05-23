@@ -388,6 +388,29 @@ const coverageGuide = {
   ],
 };
 
+const participantNotice = [
+  {
+    title: "วัตถุประสงค์",
+    text:
+      "ศึกษาสถานการณ์ปัญหาการจัดทำฉลากอาหาร และความต้องการเครื่องมือหรือนวัตกรรมดิจิทัลที่ช่วยสนับสนุนผู้ประกอบการในจังหวัดสมุทรปราการ",
+  },
+  {
+    title: "สิ่งที่จะขอให้ทำ",
+    text:
+      "ให้สัมภาษณ์เชิงลึกเกี่ยวกับประสบการณ์ ปัญหา และความต้องการในการจัดทำฉลากอาหาร ใช้เวลาประมาณ 10-15 นาที",
+  },
+  {
+    title: "ความสมัครใจ",
+    text:
+      "การเข้าร่วมเป็นไปโดยสมัครใจ สามารถไม่ตอบบางคำถาม หรือถอนตัวจากการวิจัยได้ตลอดเวลา โดยไม่มีผลกระทบใด ๆ",
+  },
+  {
+    title: "การเก็บข้อมูล",
+    text:
+      "ข้อมูลจะถูกปกปิดเป็นความลับ ใช้เพื่อการวิจัยและการพัฒนาแอปพลิเคชันเท่านั้น การรายงานผลจะไม่เปิดเผยชื่อหรือข้อมูลที่ระบุตัวตนได้",
+  },
+];
+
 const blankState = {
   view: "manual",
   currentId: "q2-1",
@@ -404,8 +427,11 @@ const blankState = {
   },
   consent: {
     informed: false,
+    participation: false,
     audio: false,
     privacy: false,
+    acceptedAt: null,
+    declinedAt: null,
   },
   interviewer: "นายชญานิน ศรีชมภู",
   timer: {
@@ -539,6 +565,28 @@ function progress() {
   };
 }
 
+function hasInterviewConsent() {
+  return Boolean(
+    state.consent.informed &&
+    state.consent.participation &&
+    state.consent.privacy,
+  );
+}
+
+function markConsentAccepted() {
+  state.consent.informed = true;
+  state.consent.participation = true;
+  state.consent.privacy = true;
+  state.consent.declinedAt = null;
+  if (!state.consent.acceptedAt) {
+    state.consent.acceptedAt = new Date().toISOString();
+  }
+}
+
+function showConsentRequired() {
+  showToast("กรุณาแจ้งข้อมูลการวิจัยและบันทึกความยินยอมก่อนเริ่มสัมภาษณ์");
+}
+
 function elapsedMs() {
   const extra =
     state.timer.running && state.timer.startedAt
@@ -568,14 +616,18 @@ function render() {
   const answer = answerFor(question.id);
   const stats = progress();
   const app = document.querySelector("#app");
-  const mainView =
-    state.view === "ai" ? renderAIInterview(stats) : renderQuestion(question, answer);
+  const consentReady = hasInterviewConsent();
+  const mainView = consentReady
+    ? state.view === "ai"
+      ? renderAIInterview(stats)
+      : renderQuestion(question, answer)
+    : renderConsentGate();
 
   app.innerHTML = `
     <div class="app-shell">
       ${renderTopbar(stats)}
-      <main class="layout ${state.view === "ai" ? "ai-layout" : ""}">
-        ${renderSidebar(stats)}
+      <main class="layout ${state.view === "ai" ? "ai-layout" : ""} ${consentReady ? "" : "consent-layout"}">
+        ${consentReady ? renderSidebar(stats) : renderConsentSidebar(stats)}
         ${mainView}
         ${renderInspector(stats)}
       </main>
@@ -596,7 +648,6 @@ function render() {
 
 function renderTopbar(stats) {
   const timerAction = state.timer.running ? "pause-timer" : "start-timer";
-  const timerLabel = state.timer.running ? "หยุดชั่วคราว" : "เริ่มสัมภาษณ์";
 
   return `
     <header class="topbar">
@@ -613,12 +664,71 @@ function renderTopbar(stats) {
           <button class="mode-tab ${state.view === "ai" ? "active" : ""}" data-action="set-view" data-view="ai">AI สัมภาษณ์ผ่านแชท</button>
         </div>
         <span class="status-chip ${stats.done ? "good" : ""}">${stats.done}/${stats.total} คำถาม</span>
-        <button class="button accent" data-action="${timerAction}">${icon(state.timer.running ? "pause" : "play")}<span>${timerLabel}</span></button>
-        <button class="button soft" data-action="save">${icon("save")}<span>บันทึกฉบับร่าง</span></button>
-        <button class="button warning" data-action="reset">${icon("trash")}<span>ล้างข้อมูลทั้งหมด</span></button>
+        <button class="button accent" data-action="${timerAction}">${icon(state.timer.running ? "pause" : "play")}<span>${state.timer.running ? "หยุด" : "เริ่ม"}</span></button>
+        <button class="button soft" data-action="save">${icon("save")}<span>บันทึกร่าง</span></button>
+        <button class="button warning" data-action="reset">${icon("trash")}<span>ล้างข้อมูล</span></button>
         <button class="button primary" data-action="submit">${icon("send")}<span>ส่งข้อมูล</span></button>
       </div>
     </header>
+  `;
+}
+
+function renderConsentSidebar(stats) {
+  return `
+    <aside class="sidebar consent-sidebar">
+      <section class="panel progress-panel">
+        <div class="progress-row">
+          <div>
+            <p class="tiny-label">ก่อนเริ่ม</p>
+            <p class="progress-title">รอบันทึกความยินยอม</p>
+          </div>
+          <div class="progress-number" style="--progress-angle: ${stats.percent * 3.6}deg">${stats.percent}%</div>
+        </div>
+      </section>
+    </aside>
+  `;
+}
+
+function renderConsentGate() {
+  return `
+    <section class="workspace consent-workspace">
+      <article class="panel consent-gate">
+        <div class="consent-hero">
+          <div class="brand-mark">${icon("check")}</div>
+          <div>
+            <p class="section-kicker">ก่อนเริ่มสัมภาษณ์</p>
+            <h2 class="question-title">ข้อมูลการวิจัยและความยินยอม</h2>
+            <p class="consent-intro">
+              งานวิจัยเรื่อง การพัฒนารูปแบบการตรวจสอบและจัดทำฉลากอาหารสำหรับผู้ประกอบการ จังหวัดสมุทรปราการ โดยนายชญานิน ศรีชมภู
+            </p>
+          </div>
+        </div>
+
+        <div class="consent-grid">
+          ${participantNotice
+            .map(
+              (item) => `
+                <section class="consent-point">
+                  <strong>${escapeHtml(item.title)}</strong>
+                  <p>${escapeHtml(item.text)}</p>
+                </section>
+              `,
+            )
+            .join("")}
+        </div>
+
+        <div class="consent-confirm">
+          <p>
+            การกดปุ่มยินยอมหมายถึงผู้ให้สัมภาษณ์ได้รับทราบข้อมูลสำคัญ มีโอกาสซักถาม และสมัครใจให้ข้อมูลเพื่อการวิจัยนี้
+          </p>
+          ${renderToggle("audio", "ยินยอมให้บันทึกเสียงหรือถอดคำพูดเพื่อความถูกต้องของข้อมูล (เลือกได้)")}
+          <div class="consent-actions">
+            <button class="button" data-action="decline-consent">${icon("pause")}<span>ยังไม่ยินยอม</span></button>
+            <button class="button accent" data-action="accept-consent">${icon("check")}<span>ยินยอม เริ่มสัมภาษณ์</span></button>
+          </div>
+        </div>
+      </article>
+    </section>
   `;
 }
 
@@ -799,15 +909,15 @@ function renderAIInterview(stats) {
           <textarea class="chat-input" data-chat-input placeholder="พิมพ์คำตอบของผู้ให้สัมภาษณ์ หรือถอดคำพูดจากการสนทนา... (หรือใช้ฟังก์ชันพูดแทนการพิมพ์)"></textarea>
           <div class="chat-actions">
             <div class="toolbar-group">
-              <button class="button accent" data-action="start-ai">${icon("message")}<span>${state.ai.started ? "เริ่มช่วงใหม่" : "เริ่ม AI สัมภาษณ์"}</span></button>
-              <button class="button soft" data-action="ai-next">${icon("arrowRight")}<span>ไปคำถามถัดไป</span></button>
+              <button class="button accent" data-action="start-ai">${icon("message")}<span>${state.ai.started ? "ช่วงใหม่" : "เริ่ม AI"}</span></button>
+              <button class="button soft" data-action="ai-next">${icon("arrowRight")}<span>คำถามถัดไป</span></button>
               <button class="button warning" data-action="finish-ai">${icon("check")}<span>จบสัมภาษณ์</span></button>
-              <button class="button soft" data-action="extract-ai">${icon("spark")}<span>ดึงข้อมูล AI</span></button>
+              <button class="button soft" data-action="extract-ai">${icon("spark")}<span>ดึงข้อมูล</span></button>
             </div>
             <div class="toolbar-group">
               <button class="button soft" data-action="toggle-mic">
                 ${icon("mic")}
-                <span>พูดคำตอบ</span>
+                <span>พูดตอบ</span>
               </button>
               <button class="button primary" data-action="send-chat">${icon("send")}<span>ส่งคำตอบ</span></button>
             </div>
@@ -893,18 +1003,6 @@ function renderInspector(stats) {
           <span class="status-chip ${state.timer.running ? "good" : ""}">${state.timer.running ? "กำลังจับเวลา" : "ยังไม่เริ่ม"}</span>
         </div>
         <p class="timer-caption">เป้าหมายเดิมของแบบสัมภาษณ์: ประมาณ 10-15 นาที</p>
-      </section>
-
-      <section class="panel side-panel">
-        <div class="side-heading">
-          <h2>ความยินยอมและการบันทึกเสียง</h2>
-          ${icon("check")}
-        </div>
-        <div class="consent-list">
-          ${renderToggle("informed", "อธิบายวัตถุประสงค์และสิทธิของผู้ให้ข้อมูลแล้ว")}
-          ${renderToggle("audio", "ได้รับอนุญาตให้บันทึกเสียง")}
-          ${renderToggle("privacy", "แจ้งการเก็บข้อมูลเป็นความลับแล้ว")}
-        </div>
       </section>
 
       <section class="panel side-panel">
@@ -1037,6 +1135,11 @@ function aiOpeningText(question) {
 }
 
 function startAIInterview(forceNew = false) {
+  if (!hasInterviewConsent()) {
+    showConsentRequired();
+    return;
+  }
+
   if (forceNew) {
     state.ai.messages = [];
     state.ai.currentId = guide[0].id;
@@ -1255,6 +1358,11 @@ function moveAINext(addMessage = true) {
 }
 
 function sendChatMessage() {
+  if (!hasInterviewConsent()) {
+    showConsentRequired();
+    return;
+  }
+
   const input = document.querySelector("[data-chat-input]");
   const text = input?.value.trim();
   if (!text) return;
@@ -1439,6 +1547,11 @@ function refreshTimer() {
 }
 
 function startTimer() {
+  if (!hasInterviewConsent()) {
+    showConsentRequired();
+    return;
+  }
+
   if (!state.timer.running) {
     state.timer.running = true;
     state.timer.startedAt = Date.now();
@@ -1455,6 +1568,28 @@ function pauseTimer() {
     saveState();
     render();
   }
+}
+
+function acceptConsent() {
+  markConsentAccepted();
+  saveState();
+  startTimer();
+  showToast("บันทึกความยินยอมแล้ว เริ่มสัมภาษณ์ได้");
+}
+
+function declineConsent() {
+  state.consent.participation = false;
+  state.consent.acceptedAt = null;
+  state.consent.declinedAt = new Date().toISOString();
+  state.ai.started = false;
+  if (state.timer.running) {
+    state.timer.elapsedMs = elapsedMs();
+    state.timer.running = false;
+    state.timer.startedAt = null;
+  }
+  saveState();
+  render();
+  showToast("ยังไม่เริ่มสัมภาษณ์ เพราะผู้เข้าร่วมยังไม่ยินยอม");
 }
 
 function navigate(direction) {
@@ -1496,8 +1631,12 @@ function buildMarkdown() {
   const r = state.respondent;
   const consentText = [
     state.consent.informed ? "อธิบายวัตถุประสงค์แล้ว" : "ยังไม่ยืนยันการอธิบายวัตถุประสงค์",
-    state.consent.audio ? "อนุญาตบันทึกเสียง" : "ไม่ระบุ/ไม่อนุญาตบันทึกเสียง",
+    state.consent.participation ? "ยินยอมเข้าร่วมโดยสมัครใจ" : "ยังไม่ยืนยันความยินยอมเข้าร่วม",
     state.consent.privacy ? "แจ้งการเก็บข้อมูลเป็นความลับแล้ว" : "ยังไม่ยืนยันการแจ้งความลับ",
+    state.consent.audio ? "อนุญาตบันทึกเสียง" : "ไม่ระบุ/ไม่อนุญาตบันทึกเสียง",
+    state.consent.acceptedAt
+      ? `บันทึกความยินยอมเมื่อ ${new Date(state.consent.acceptedAt).toLocaleString("th-TH")}`
+      : "ยังไม่มีเวลาบันทึกความยินยอม",
   ].join("; ");
 
   const lines = [
@@ -1580,6 +1719,11 @@ function buildSubmissionPayload() {
 }
 
 async function submitInterview() {
+  if (!hasInterviewConsent()) {
+    showConsentRequired();
+    return;
+  }
+
   const payload = buildSubmissionPayload();
   const isStaticGithubPages = window.location.hostname.endsWith("github.io");
 
@@ -1688,6 +1832,33 @@ document.addEventListener("click", (event) => {
   if (!button) return;
 
   const action = button.dataset.action;
+  const consentGuardedActions = new Set([
+    "start-timer",
+    "start-ai",
+    "ask-ai-probe",
+    "ai-next",
+    "finish-ai",
+    "extract-ai",
+    "toggle-mic",
+    "send-chat",
+    "submit",
+  ]);
+
+  if (action === "accept-consent") {
+    acceptConsent();
+    return;
+  }
+
+  if (action === "decline-consent") {
+    declineConsent();
+    return;
+  }
+
+  if (consentGuardedActions.has(action) && !hasInterviewConsent()) {
+    showConsentRequired();
+    return;
+  }
+
   const question = currentQuestion();
   const answer = answerFor(question.id);
 
@@ -1773,7 +1944,22 @@ document.addEventListener("input", (event) => {
 document.addEventListener("change", (event) => {
   const target = event.target;
   if (target.matches("[data-consent]")) {
-    state.consent[target.dataset.consent] = target.checked;
+    const key = target.dataset.consent;
+    state.consent[key] = target.checked;
+    if (hasInterviewConsent()) {
+      state.consent.declinedAt = null;
+      if (!state.consent.acceptedAt) {
+        state.consent.acceptedAt = new Date().toISOString();
+      }
+    } else if (["informed", "participation", "privacy"].includes(key)) {
+      state.consent.acceptedAt = null;
+      state.ai.started = false;
+      if (state.timer.running) {
+        state.timer.elapsedMs = elapsedMs();
+        state.timer.running = false;
+        state.timer.startedAt = null;
+      }
+    }
     saveState();
     render();
   }
