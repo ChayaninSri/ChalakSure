@@ -1071,7 +1071,6 @@ function renderAIInterview(stats) {
               <input type="checkbox" data-ai-auto-speak ${state.ai.autoSpeakQuestions ? "checked" : ""} ${speechSupported ? "" : "disabled"} />
               <span>อ่านอัตโนมัติ</span>
             </label>
-            <button class="button soft" data-action="ask-ai-probe">${icon("spark")}<span>ถามต่อจากคำตอบ</span></button>
           </div>
         </div>
 
@@ -2211,7 +2210,6 @@ document.addEventListener("click", (event) => {
     "set-view",
     "start-timer",
     "start-ai",
-    "ask-ai-probe",
     "ai-next",
     "finish-ai",
     "extract-ai",
@@ -2274,7 +2272,6 @@ document.addEventListener("click", (event) => {
   if (action === "start-timer") startTimer();
   if (action === "pause-timer") pauseTimer();
   if (action === "start-ai") startAIInterview(state.ai.completed);
-  if (action === "ask-ai-probe") askAIProbe();
   if (action === "ai-next") moveAINext();
   if (action === "finish-ai") {
     state.ai.completed = true;
